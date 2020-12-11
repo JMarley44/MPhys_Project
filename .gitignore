@@ -2,3 +2,5 @@
 *.ini.bak
 *.bak
 *.png
+*.npy
+*.pyc

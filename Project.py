@@ -7,16 +7,19 @@ Created on Mon Dec  7 19:55:22 2020
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import DataExtract as d
 
 '''Data import'''
 
 path = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
 dataimport = pd.read_csv(path, header=None)
 dataset = pd.DataFrame(dataimport).to_numpy()
-
 N = len(dataset)
 
 '''Data extraction'''
+
+# Use DataExtract module
+data_ttZ, data_ttWm, data_ttWp, data_ggA_460_360, data_ggA_500_360, data_ggA_600_360,data_ggA_600_400,data_ggA_600_500, data_ggA_500_400 = d.Extractdata(dataset, N)
 
 lep1_pt = dataset[:,2]
 lep1_eta = dataset[:,3]
@@ -136,7 +139,6 @@ Plot(lep23_inv_mass, "Di-lepton (2-3) invariant mass", 20, False,  label='lep23'
      xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton (2-3) invariant mass")
 
 di_lep = np.stack((lep12_inv_mass,lep13_inv_mass,lep23_inv_mass),axis=1)
-
 Plot(di_lep, "Di-lepton combined", 50, False,  label=['lep12','lep13','lep23'],
      xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton invariant masses")
 
