@@ -6,7 +6,7 @@ Created on Fri Dec 11 11:18:27 2020
 """
 import numpy as np
 
-def Extractdata(dataset, N):
+def ExtractSignals(dataset, N):
     
     ### Try to load the separated data from file, if it doesn't exist separate it manually
     
@@ -38,28 +38,28 @@ def Extractdata(dataset, N):
             if (dataset[i,0]=='ttZ'):
                 data_ttZ = np.vstack([data_ttZ, dataset[i,1:47]]) if data_ttZ.size else dataset[i,1:47]
         
-            if (dataset[i,0]=='ttWm'):
+            elif (dataset[i,0]=='ttWm'):
                 data_ttWm = np.vstack([data_ttWm, dataset[i,1:47]]) if data_ttWm.size else dataset[i,1:47]
                 
-            if (dataset[i,0]=='ttWp'):
+            elif (dataset[i,0]=='ttWp'):
                 data_ttWp = np.vstack([data_ttWp, dataset[i,1:47]]) if data_ttWp.size else dataset[i,1:47]
         
-            if (dataset[i,0]=='ggA_460_360'):
+            elif (dataset[i,0]=='ggA_460_360'):
                 data_ggA_460_360 = np.vstack([data_ggA_460_360, dataset[i,1:47]]) if data_ggA_460_360.size else dataset[i,1:47]
                 
-            if (dataset[i,0]=='ggA_500_360'):
+            elif (dataset[i,0]=='ggA_500_360'):
                 data_ggA_500_360 = np.vstack([data_ggA_500_360, dataset[i,1:47]]) if data_ggA_500_360.size else dataset[i,1:47]
                 
-            if (dataset[i,0]=='ggA_600_360'):
+            elif (dataset[i,0]=='ggA_600_360'):
                 data_ggA_600_360 = np.vstack([data_ggA_600_360, dataset[i,1:47]]) if data_ggA_600_360.size else dataset[i,1:47]
         
-            if (dataset[i,0]=='ggA_600_400'):
+            elif (dataset[i,0]=='ggA_600_400'):
                 data_ggA_600_400 = np.vstack([data_ggA_600_400, dataset[i,1:47]]) if data_ggA_600_400.size else dataset[i,1:47]
 
-            if (dataset[i,0]=='ggA_600_500'):
+            elif (dataset[i,0]=='ggA_600_500'):
                 data_ggA_600_500 = np.vstack([data_ggA_600_500, dataset[i,1:47]]) if data_ggA_600_500.size else dataset[i,1:47]
 
-            if (dataset[i,0]=='ggA_500_400'):
+            elif (dataset[i,0]=='ggA_500_400'):
                 data_ggA_500_400 = np.vstack([data_ggA_500_400, dataset[i,1:47]]) if data_ggA_500_400.size else dataset[i,1:47]
 
         np.save('Arrays/dat_ttZ.npy', data_ttZ)
@@ -73,5 +73,48 @@ def Extractdata(dataset, N):
         np.save('Arrays/dat_ggA_500_400.npy', data_ggA_500_400)
         
     return data_ttZ, data_ttWm, data_ttWp, data_ggA_460_360, data_ggA_500_360, data_ggA_600_360,data_ggA_600_400,data_ggA_600_500, data_ggA_500_400
+
+def ExtractVariable(data_sig, part, partno, variable):
+    partno = partno-1
+    
+    if part=="weight":
+        i=0
+    elif part=="met":
+        if variable == "pt": i=28
+        else: i=29 
+    
+    elif part=="lep" or part=="bjet" or part=="jet":
+        d = {'pt':0, 'eta':1, 'phi':2, 'q':3, 'fl':4}
+        if part=="lep": i=1+(partno*5)+d[variable]
+        elif part=="bjet": i=16+(partno*3)+d[variable]
+        elif part == "jet": i=22+(partno*3)+d[variable]
+        
+    else:
+        d = {'eta':0, 'phi':1, 'pt':2, 'm':3}
+        if part == "tt": i=30+d[variable]
+        elif part == "ztt": i=34+d[variable]
+        elif part == "top": i=38+(partno*4)+d[variable]
+        
+    variable = data_sig[:,i]
+    return variable
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

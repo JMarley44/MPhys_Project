@@ -6,40 +6,71 @@ Created on Mon Dec  7 19:55:22 2020
 """
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import DataExtract as d
+import Functions as f
 
 '''Data import'''
 
 path = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
 dataimport = pd.read_csv(path, header=None)
-dataset = pd.DataFrame(dataimport).to_numpy()
+dataset_full = pd.DataFrame(dataimport).to_numpy()
+dataset = np.delete(dataset_full,0,1)
 N = len(dataset)
 
 '''Data extraction'''
 
 # Use DataExtract module
-data_ttZ, data_ttWm, data_ttWp, data_ggA_460_360, data_ggA_500_360, data_ggA_600_360,data_ggA_600_400,data_ggA_600_500, data_ggA_500_400 = d.Extractdata(dataset, N)
+data_ttZ, data_ttWm, data_ttWp, data_ggA_460_360, data_ggA_500_360, data_ggA_600_360,data_ggA_600_400,data_ggA_600_500, data_ggA_500_400 = d.ExtractSignals(dataset_full, N)
 
-lep1_pt = dataset[:,2]
-lep1_eta = dataset[:,3]
-lep1_phi = dataset[:,4]
-lep1_q = dataset[:,5]
-lep1_fla = dataset[:,6]
+# Signal dataset lengths
+N_ttZ = len(data_ttZ)
 
-lep2_pt = dataset[:,7]
-lep2_eta = dataset[:,8]
-lep2_phi = dataset[:,9]
-lep2_q = dataset[:,10]
-lep2_fla = dataset[:,11]
+# Weights
+ggA_460_360_weight = d.ExtractVariable(data_ggA_460_360, 'weight',1,1)
+ttWm__weight = d.ExtractVariable(data_ttWm, 'weight',1,1)
+ttWp__weight = d.ExtractVariable(data_ttWp, 'weight',1,1)
+ttZ__weight = d.ExtractVariable(data_ttZ, 'weight',1,1)
 
-lep3_pt = dataset[:,12]
-lep3_eta = dataset[:,13]
-lep3_phi = dataset[:,14]
-lep3_q = dataset[:,15]
-lep3_fla = dataset[:,16]
+'Leptons'
+lep1_pt = d.ExtractVariable(dataset, 'lep', 1, 'pt')
+lep1_eta = d.ExtractVariable(dataset, 'lep', 1, 'eta')
+lep1_phi = d.ExtractVariable(dataset, 'lep', 1, 'phi')
+
+lep2_pt = d.ExtractVariable(dataset, 'lep', 2, 'pt')
+lep2_eta = d.ExtractVariable(dataset, 'lep', 2, 'eta')
+lep2_phi = d.ExtractVariable(dataset, 'lep', 2, 'phi')
+
+lep3_pt = d.ExtractVariable(dataset, 'lep', 3, 'pt')
+lep3_eta = d.ExtractVariable(dataset, 'lep', 3, 'eta')
+lep3_phi = d.ExtractVariable(dataset, 'lep', 3, 'phi')
+
+lep1_ttZ_pt = d.ExtractVariable(data_ttZ, 'lep', 1, 'pt')
+lep1_ttWp_pt = d.ExtractVariable(data_ttWp, 'lep', 1, 'pt')
+lep1_ttWm_pt = d.ExtractVariable(data_ttWm, 'lep', 1, 'pt')
+lep1_ggA_460_360_pt = d.ExtractVariable(data_ggA_460_360, 'lep', 1, 'pt')
+
+lep2_ttZ_pt = d.ExtractVariable(data_ttZ, 'lep', 2, 'pt')
+lep2_ttWp_pt = d.ExtractVariable(data_ttWp, 'lep', 2, 'pt')
+lep2_ttWm_pt = d.ExtractVariable(data_ttWm, 'lep', 2, 'pt')
+lep2_ggA_460_360_pt = d.ExtractVariable(data_ggA_460_360, 'lep', 2, 'pt')
+
+'Jets'
+jet1_pt = d.ExtractVariable(dataset, 'jet', 1, 'pt')
+jet1_eta = d.ExtractVariable(dataset, 'jet', 1, 'eta')
+jet1_phi = d.ExtractVariable(dataset, 'jet', 1, 'phi')
+
+jet2_pt = d.ExtractVariable(dataset, 'jet', 2, 'pt')
+jet2_eta = d.ExtractVariable(dataset, 'jet', 2, 'eta')
+jet2_phi = d.ExtractVariable(dataset, 'jet', 2, 'phi')
+
+'Tops'
+top1_ttZ_pt = d.ExtractVariable(data_ttZ, 'top', 1, 'pt')
+top1_ttZ_eta = d.ExtractVariable(data_ttZ, 'top', 1, 'eta')
+top1_ttZ_phi = d.ExtractVariable(data_ttZ, 'top', 1, 'phi')
+top1_ttZ_m = d.ExtractVariable(data_ttZ, 'top', 1, 'm')
 
 '''Empty array definition'''
+
 lep1_four_mom = np.zeros((N,4))
 lep2_four_mom = np.zeros((N,4))
 lep3_four_mom = np.zeros((N,4))
@@ -52,96 +83,86 @@ lep12_inv_mass = np.zeros(N)
 lep13_inv_mass = np.zeros(N)
 lep23_inv_mass = np.zeros(N)
 
-    #####
+jet1_four_mom = np.zeros((N,4))
+jet2_four_mom = np.zeros((N,4))
 
-'''Functions'''
+jet12_four_mom = np.zeros((N,4))
+jet12_inv_mass = np.zeros(N)
 
-def Plot(X, tag, Nb, close, label, **kwargs):
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(12.0,10.0))
-    
-    xtitle = tag
-    ytitle = tag
-    title = tag
-    for key, value in kwargs.items():
-        if key == "xtitle":
-            xtitle = value
-        elif key=="ytitle":
-            ytitle = value
-        elif key=="title":
-            title = value
-        elif key=="label":
-            label = value
-            
-    #Definition of variables
-    themin = np.amin(X)-1
-    themax = np.amax(X)+1
-    bins = np.linspace(themin, themax, Nb)
-    
-    if X.ndim > 1:
-        for i in range(len(X[0])):
-            plt.hist(X[:,i], bins=bins, label=label[i])
-            plt.show()
-    elif X.ndim <= 1:
-       plt.hist(X, bins=bins, label=label)
-        
-    plt.title(title, fontsize=40)
-    plt.xlabel(xtitle, fontsize=25)
-    plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right')
-    plt.xlim(themin, themax)
-    ax.set_xticks(bins, minor=True)
-    ax.grid(which='minor', axis='x', alpha = 0.5)
-    ax.grid(which='major', axis='y', alpha = 0.5)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.savefig("Plots/"+title+".png")
-    if close: plt.close('all')
+top1_ttZ_four_mom = np.zeros((N_ttZ,4))
+top1_ttZ_inv_mass = np.zeros(N_ttZ)
 
-def four_mom(pt, eta, phi):
-    p = np.zeros((4))
-    p[0] = pt*np.cosh(eta)
-    p[1] = pt*np.cos(phi)
-    p[2] = pt*np.sin(phi)
-    p[3] = pt*np.sinh(eta)
-    return p
+'''Calculations'''
 
-def inv_mass(four_mom):
-    p = np.sqrt((four_mom[1]**2)+(four_mom[2]**2)+(four_mom[3]**2))
-    m0 = np.sqrt(four_mom[0]**2-p**2)
-    return m0
-
-    #####
-
+'All data set loop'
 for i in range(N):
-    '''Four momentum calculation'''
-    lep1_four_mom [i,:] = four_mom(lep1_pt[i], lep1_eta[i], lep1_phi[i])
-    lep2_four_mom [i,:] = four_mom(lep2_pt[i], lep2_eta[i], lep2_phi[i])
-    lep3_four_mom [i,:] = four_mom(lep3_pt[i], lep3_eta[i], lep3_phi[i])
     
-    '''Addition of four momenta'''
+    'Lepton'
+    # Four momenta
+    lep1_four_mom [i,:] = f.four_mom(lep1_pt[i], lep1_eta[i], lep1_phi[i])
+    lep2_four_mom [i,:] = f.four_mom(lep2_pt[i], lep2_eta[i], lep2_phi[i])
+    lep3_four_mom [i,:] = f.four_mom(lep3_pt[i], lep3_eta[i], lep3_phi[i])
+    
+    # Addition of four momenta
     lep12_four_mom [i,:] = lep1_four_mom[i,:]+lep2_four_mom[i,:]
     lep13_four_mom [i,:] = lep1_four_mom[i,:]+lep3_four_mom[i,:]
     lep23_four_mom [i,:] = lep2_four_mom[i,:]+lep3_four_mom[i,:]
     
-    '''Invariant mass total calculation'''
-    lep12_inv_mass [i] = inv_mass(lep12_four_mom[i])
-    lep13_inv_mass [i] = inv_mass(lep13_four_mom[i])
-    lep23_inv_mass [i] = inv_mass(lep23_four_mom[i])
+    # Invariant mass
+    lep12_inv_mass [i] = f.inv_mass(lep12_four_mom[i])
+    lep13_inv_mass [i] = f.inv_mass(lep13_four_mom[i])
+    lep23_inv_mass [i] = f.inv_mass(lep23_four_mom[i])
+    
+    'Jet'
+    # Four momenta
+    jet1_four_mom [i,:] = f.four_mom(jet1_pt[i], jet1_eta[i], jet1_phi[i])
+    jet2_four_mom [i,:] = f.four_mom(jet2_pt[i], jet2_eta[i], jet2_phi[i])
+    
+    # Addition of four momenta
+    jet12_four_mom [i,:] = jet1_four_mom[i,:]+jet2_four_mom[i,:]
+    
+    #Invariant mass
+    jet12_inv_mass [i] = f.inv_mass(jet12_four_mom[i])
+
+
 
 '''Plots'''
-Plot(lep12_inv_mass, "Di-lepton (1-2) invariant mass", 20, False, label='lep12',
-     xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton (1-2) invariant mass")
 
-Plot(lep13_inv_mass, "Di-lepton (1-3) invariant mass", 20, False,  label='lep13',
-     xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton (1-3) invariant mass")
+'Singular histograms'
 
-Plot(lep23_inv_mass, "Di-lepton (2-3) invariant mass", 20, False,  label='lep23',
-     xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton (2-3) invariant mass")
+# Invariants
+f.Hist(lep12_inv_mass, "Di-lepton (1-2) invariant mass", 20, close=True, label='lep12',
+     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (1-2) invariant mass")
 
-di_lep = np.stack((lep12_inv_mass,lep13_inv_mass,lep23_inv_mass),axis=1)
-Plot(di_lep, "Di-lepton combined", 50, False,  label=['lep12','lep13','lep23'],
-     xtitle="M\u2080 (GeV)", ytitle="Counts (#)", title="Di-lepton invariant masses")
+f.Hist(lep13_inv_mass, "Di-lepton (1-3) invariant mass", 20, close=True,  label='lep13',
+     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (1-3) invariant mass")
 
+f.Hist(lep23_inv_mass, "Di-lepton (2-3) invariant mass", 20, close=True,  label='lep23',
+     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (2-3) invariant mass")
+
+f.Hist(jet12_inv_mass, "Di-jet (1-2) invariant mass", 20, close=True,  label='jet12',
+     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-jet (1-2) invariant mass", xmax=160, xmin=0)
+
+
+'Stacked histograms'
+
+# Define labels, colors and weights for histogram stacks
+label = [r't$\bar{t}$Z',r't$\bar{t}$$W^+$',r't$\bar{t}$$W^-$','ggA ($m_A$=460, $m_H$=360)']
+color = ['cornflowerblue','lightgreen','bisque','red']
+weights = ([ttZ__weight, ttWp__weight, ttWm__weight,ggA_460_360_weight])
+
+# Combine the backgrounds into arrays
+lep1_pt_plot = ([lep1_ttZ_pt,lep1_ttWp_pt,lep1_ttWm_pt])
+lep2_pt_plot = ([lep2_ttZ_pt,lep2_ttWp_pt,lep2_ttWm_pt])
+
+# Plot signal histograms for input variables
+f.SignalHist(lep1_pt_plot, lep1_ggA_460_360_pt, weights, "1st lepton p\u209C", 25, close=False,  
+             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 1 $p_T$", 
+             saveas="Lepton1_pt")
+
+f.SignalHist(lep2_pt_plot, lep2_ggA_460_360_pt, weights, "2nd lepton p\u209C", 25, close=False,  
+             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 2 $p_T$", 
+             saveas="Lepton2_pt")
 
 ######OLD
 '''
@@ -178,8 +199,10 @@ def doit(tree, tag, scale=1.):
         print (e.jet2_pt      , ',',
         print (e.jet2_eta     , ',',
         print (e.jet2_phi     , ',',
+               
         print (e.met_pt       , ',',
         print (e.met_phi      , ',',
+               
         print (e.ttbar_eta    , ',',
         print (e.ttbar_phi    , ',',
         print (e.ttbar_pt     , ',',
