@@ -12,6 +12,11 @@ plt.close('all')
 # Global variable for untitled figures
 save_count = 1
 
+# Momentum
+def mom(px, py, pz):
+    p = np.sqrt(((px)**2)+((py)**2)+((pz)**2))
+    return p
+
 # Four momentum of massless particles
 def four_mom(pt, eta, phi):
     p = np.zeros((4))
@@ -44,8 +49,8 @@ def Hist(X, tag, Nb, close, label, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     
     # Definition of variables
-    themin = np.amin(X)-1
-    themax = np.amax(X)+1
+    themin = np.amin(X)
+    themax = np.amax(X)
     
     for key, value in kwargs.items():
         if key == "xtitle":
@@ -83,7 +88,19 @@ def Hist(X, tag, Nb, close, label, **kwargs):
     if close: plt.close()
     
 # Stacked histograms with signal
-def SignalHist(X, X1, weight, tag, Nb, close, label, **kwargs):
+'''
+X - Histrogram array
+X1 - Signal array
+weight - weights for histograms with signal weight on the end
+Nb - Number of bins for the histogram
+close - Whether to close the plot or not
+label - labels for histograms with signal label on the end
+
+kwargs - xtitle, ytitle, title, colour/color, saveas
+
+colour for histograms with signal colour on the end
+'''
+def SignalHist(X, X1, weight, Nb, close, label, **kwargs):
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     global save_count
@@ -103,8 +120,6 @@ def SignalHist(X, X1, weight, tag, Nb, close, label, **kwargs):
             ytitle = j
         elif i=="title":
             title = j
-        elif i=="label":
-            label = j
         elif i=="color" or i=="colour":
             color = j
         elif i=="saveas":
@@ -134,18 +149,18 @@ def SignalHist(X, X1, weight, tag, Nb, close, label, **kwargs):
     count = np.zeros((length, Nb-1))
     stack_count=0
     
+    # Plot and stack histograms
     for i in range(length):
         count[i][:],edge = np.histogram(X[i], bins=bins, weights=weight[i])
         plt.bar(bins_plot, count[i][:], label=label[i], width = width, align='edge', bottom = stack_count, color=color[i])
         plt.legend(loc='upper right')
         stack_count = stack_count + count[:][i]
         
-    
+    # Plot the signal
     step_count,edge = np.histogram(X1, bins=bins, weights=weight[length])
     step_count_ext = np.append(step_count, step_count[len(step_count)-1])
     plt.step(bins, step_count_ext, label=label[length], color=color[length], where='post', linewidth = 2.0, linestyle='dashed')
         
-    
     # Plot customisation
     ytitle = (ytitle + " / {width:.2f} GeV").format(width = width)
     plt.title(title, fontsize=40)
@@ -158,6 +173,7 @@ def SignalHist(X, X1, weight, tag, Nb, close, label, **kwargs):
     ax.grid(which='major', axis='y', alpha = 0.5)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
+    plt.yscale('log')
     
     # String for adding to the text box
     string = ('$\u221As = 13 TeV, 139$ $fb^{-1}$')
@@ -166,6 +182,10 @@ def SignalHist(X, X1, weight, tag, Nb, close, label, **kwargs):
     ax.text(.96, .95, string, transform=ax.transAxes, fontsize=20, fontweight='bold', horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
+    print("plotted: ", title)
     # Save the figure, close if close is set true
     plt.savefig("Plots/"+saveas+".png")
-    if close: plt.close()
+    if close: 
+        plt.close()
+        print("closed: ",title)
+    

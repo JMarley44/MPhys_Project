@@ -4,3 +4,4 @@
 *.png
 *.npy
 *.pyc
+.spyproject/config/workspace.ini
