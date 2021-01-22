@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Close all plots on program start
-plt.close('all')
+#plt.close('all')
 # Global variable for untitled figures
-save_count = 1
+#save_count = 1
 
 # Momentum
 def mom(px, py, pz):
@@ -182,10 +182,9 @@ def SignalHist(X, X1, weight, Nb, close, label, **kwargs):
     ax.text(.96, .95, string, transform=ax.transAxes, fontsize=20, fontweight='bold', horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
-    print("plotted: ", title)
     # Save the figure, close if close is set true
     plt.savefig("Plots/"+saveas+".png")
     if close: 
         plt.close()
-        print("closed: ",title)
-    
+    else:
+        plt.show()

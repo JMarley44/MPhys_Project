@@ -4,8 +4,9 @@ Created on Fri Dec 11 11:18:27 2020
 
 @author: James
 """
-def ExtractVariable(part, partno, variable):
-    from Project import dataset
+
+def ExtractVariable(dataset, part, partno, variable):
+    #from Project import dataset
     partno = partno-1
     
     if part=="weight":
@@ -34,8 +35,7 @@ def ExtractVariable(part, partno, variable):
     variable = dataset[:,i]
     return variable
 
-def DataSplit():
-    from Project import dataset_full
+def DataSplit(dataset_full):
     N_ttZ  = 0
     N_ttWm  = 0
     N_ttWp  = 0
