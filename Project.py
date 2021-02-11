@@ -14,6 +14,7 @@ start_time = time.time()
 
 import DataExtract as d
 import Functions as f
+import SVM as s
 
 import pandas as pd
 import numpy as np
@@ -24,15 +25,15 @@ plt.close('all')
 '''
 #Data management
 '''
-
 # Import and manipulation
-path = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
+path = "C:/Users/James/Desktop/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
 dataimport = pd.read_csv(path, header=None)
 dataset_full = pd.DataFrame(dataimport).to_numpy()
 dataset = np.delete(dataset_full,0,1)
 
 # Find the length of the states
 N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_ggA_600_500,N_ggA_500_400  = d.DataSplit(dataset_full)
+
 # Length of the dataset
 N = len(dataset)
 
@@ -139,7 +140,6 @@ jet12_four_mom = np.zeros((N,4))
 #MET momenta
 met_px = np.zeros(N)
 met_py = np.zeros(N)
-met_pz = np.zeros(N)
 
 'tops'
 Wp_top1_mass = np.zeros(N)
@@ -194,6 +194,10 @@ ttZ_four_mom = np.zeros((N,4))
 M_tt = np.zeros(N)
 M_ttZ = np.zeros(N)
 delta_m = np.zeros(N)
+
+'SVM variables'
+tops_angle = np.zeros(N)
+lep12_angle = np.zeros(N)
 
 '''
 #Calculations
@@ -318,94 +322,19 @@ for i in range(N):
         
         
     'Systems'
-    #!!! Add description
+    # Calculation of the tt and ttZ systems
     tt_four_mom[i] = top1_four_mom[i] + top2_four_mom[i]
     ttZ_four_mom[i] = tt_four_mom[i] + lep12_four_mom[i]
     
+    # Calculation of the masses and delta m
     M_tt [i] = f.inv_mass(tt_four_mom[i])
     M_ttZ[i] = f.inv_mass(ttZ_four_mom[i])
     delta_m[i] = M_ttZ[i] - M_tt[i]
-'''
-#Pre-plot modifications
-'''
-
-'State separations'
-# weights
-ttZ_weight = weight[0:N_ttZ]
-ttWm_weight = weight[N_ttZ:N_ttWm]
-ttWp_weight = weight[N_ttWm:N_ttWp]
-other_weight = weight[N_ttZ:N_ttWp]
-ggA_460_360_weight = weight[N_ttWp:N_ggA_460_360]
-
-# ttZ - [0:N_ttZ]
-lep1_ttZ_pt = lep1_pt[0:N_ttZ]
-lep2_ttZ_pt = lep2_pt[0:N_ttZ]
-lep3_ttZ_pt = lep3_pt[0:N_ttZ]
-
-jet1_ttZ_pt = jet1_pt[0:N_ttZ]
-jet2_ttZ_pt = jet2_pt[0:N_ttZ]
-
-bjet1_ttZ_pt = bjet1_pt[0:N_ttZ]
-bjet2_ttZ_pt = bjet2_pt[0:N_ttZ]
-
-Z_ttZ_pt = Z_pt[0:N_ttZ]
-
-delta_m_ttZ = delta_m[0:N_ttZ]
-
-# other - [N_ttZ:N_ttWp]
-lep1_other_pt = lep1_pt[N_ttZ:N_ttWp]
-lep2_other_pt = lep2_pt[N_ttZ:N_ttWp]
-lep3_other_pt = lep3_pt[N_ttZ:N_ttWp]
-
-jet1_other_pt = jet1_pt[N_ttZ:N_ttWp]
-jet2_other_pt = jet2_pt[N_ttZ:N_ttWp]
-
-bjet1_other_pt = bjet1_pt[N_ttZ:N_ttWp]
-bjet2_other_pt = bjet2_pt[N_ttZ:N_ttWp]
-
-Z_other_pt = Z_pt[N_ttZ:N_ttWp]
-
-delta_m_other = delta_m[N_ttZ:N_ttWp]
-
-# ggA_460_360 - [N_ttWp:N_ggA_460_360]
-lep1_ggA_460_360_pt = lep1_pt[N_ttWp:N_ggA_460_360]
-lep2_ggA_460_360_pt = lep2_pt[N_ttWp:N_ggA_460_360]
-lep3_ggA_460_360_pt = lep3_pt[N_ttWp:N_ggA_460_360]
-
-jet1_ggA_460_360_pt = jet1_pt[N_ttWp:N_ggA_460_360]
-jet2_ggA_460_360_pt = jet2_pt[N_ttWp:N_ggA_460_360]
-
-bjet1_ggA_460_360_pt = bjet1_pt[N_ttWp:N_ggA_460_360]
-bjet2_ggA_460_360_pt = bjet2_pt[N_ttWp:N_ggA_460_360]
-
-Z_ggA_460_360_pt = Z_pt[N_ttWp:N_ggA_460_360]
-
-delta_m_ggA_460_360 = delta_m[N_ttWp:N_ggA_460_360]
-
-'Array combinations'
-# Lepton pt's
-lep1_pt_plot = ([lep1_other_pt,lep1_ttZ_pt])
-lep2_pt_plot = ([lep2_other_pt,lep2_ttZ_pt])
-lep3_pt_plot = ([lep3_other_pt,lep3_ttZ_pt])
-
-# jet pt's
-jet1_pt_plot = ([jet1_other_pt,jet1_ttZ_pt])
-jet2_pt_plot = ([jet2_other_pt,jet2_ttZ_pt])
-
-# bjet pt's
-bjet1_pt_plot = ([bjet1_other_pt,bjet1_ttZ_pt])
-bjet2_pt_plot = ([bjet2_other_pt,bjet2_ttZ_pt])
-
-# Z
-Z_pt_arr = ([Z_other_pt,Z_ttZ_pt])
-
-# delta m
-delta_m_arr = ([delta_m_other,delta_m_ttZ])
-
-'Labels, colours and weights'
-label = [r'other',r't$\bar{t}$Z','ggA ($m_A$=460, $m_H$=360)']
-color = ['lightgreen','cornflowerblue','red']
-weights = ([other_weight, ttZ_weight, ggA_460_360_weight])
+    
+    'SVM calculations'
+    tops_angle[i] = f.angle(top1_four_mom[i],top2_four_mom[i])
+    lep12_angle[i] = f.angle(lep1_four_mom[i],lep2_four_mom[i])
+    
 
 '''
 #Plots
@@ -414,57 +343,117 @@ weights = ([other_weight, ttZ_weight, ggA_460_360_weight])
 'Singular histograms'
 
 f.Hist(lep12_inv_mass, "Di-lepton (1-2) invariant mass", 20, close=True, label='lep12',
-     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (1-2) invariant mass")
+     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (1-2) invariant mass")
 
 f.Hist(lep13_inv_mass, "Di-lepton (1-3) invariant mass", 20, close=True,  label='lep13',
-     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (1-3) invariant mass")
+     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (1-3) invariant mass")
 
 f.Hist(lep23_inv_mass, "Di-lepton (2-3) invariant mass", 20, close=True,  label='lep23',
-     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-lepton (2-3) invariant mass")
+     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (2-3) invariant mass")
 
 f.Hist(jet12_inv_mass, "Di-jet (1-2) invariant mass", 20, close=True,  label='jet12',
-     xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="Di-jet (1-2) invariant mass", xmax=160, xmin=0)
+     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-jet (1-2) invariant mass", xmax=160, xmin=0)
 
 
 'Stacked signal histograms'
 
-# Plots for input variables
-f.SignalHist(lep1_pt_plot, lep1_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 1 $p_T$", 
-             saveas="Lepton1_pt")
+###########     ttZ         other
+# Signals #     460_360    500_360    600_360
+###########     600_400    600_500    500_400
 
-f.SignalHist(lep2_pt_plot, lep2_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 2 $p_T$", 
-             saveas="Lepton2_pt")
+# Plots with all signals
+f.SignalHist(lep1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 1 $p_T$",
+             saveas="Lepton1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
-f.SignalHist(lep3_pt_plot, lep3_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 3 $p_T$", 
-             saveas="Lepton3_pt")
+f.SignalHist(lep2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 2 $p_T$",
+             saveas="Lepton2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
-f.SignalHist(jet1_pt_plot, jet1_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet1 $p_T$", 
-             saveas="Jet1_pt")
+f.SignalHist(lep3_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 3 $p_T$",
+             saveas="Lepton3_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
-f.SignalHist(jet2_pt_plot, jet2_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet2 $p_T$", 
-             saveas="Jet2_pt")
+f.SignalHist(jet1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet1 $p_T$",
+             saveas="Jet1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
-f.SignalHist(bjet1_pt_plot, bjet1_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet1 $p_T$", 
-             saveas="bJet1_pt")
+f.SignalHist(jet2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet2 $p_T$",
+             saveas="Jet2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
-f.SignalHist(bjet2_pt_plot, bjet2_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet2 $p_T$", 
-             saveas="bJet2_pt")
+f.SignalHist(bjet1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet1 $p_T$",
+             saveas="bJet1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+
+f.SignalHist(bjet2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet2 $p_T$",
+             saveas="bJet2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
 # Z boson plot
-f.SignalHist(Z_pt_arr, Z_ggA_460_360_pt, weights, 25, close=True,  
-             label=label, color=color, xtitle="$p_T$ (GeV)", ytitle="Events (#)", title="$Z_{pT}$",
-             saveas="Z_pT")
+f.SignalHist(Z_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="$Z_{pT}$",
+             saveas="Z_pT", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
 
 # delta m plot
-f.SignalHist(delta_m_arr, delta_m_ggA_460_360, weights, 25, close=False,  
-             label=label, color=color, xtitle="$\Delta$m (GeV)", ytitle="Events (#)", title="$\Delta$m",
-             saveas="delta_m")
+f.SignalHist(delta_m, weight, 25, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
+             saveas="delta_m", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+
+'Testing discriminating variables plots'
+
+#!!! Need to change ytitle on radian plots (Its not in: Events/GeV)
+
+# delta m discrim
+f.SignalHist(delta_m, weight, 25, close=False, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
+             saveas="disc_delta_m", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# tops angle plot
+f.SignalHist(tops_angle, weight, 25, close=False, xtitle=r't$\bar{t}$ angle (rad)', ytitle="Events", title=r't$\bar{t}$ angle',
+             saveas="disc_tt_angle", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# met pt plot
+f.SignalHist(met_pt, weight, 25, close=False, xtitle=r'$E^{T}_{miss}$ (GeV)', ytitle="Events", title=r'$E^{T}_{miss}$',
+             saveas="disc_met_pt", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# lep12 angle plot
+f.SignalHist(lep12_angle, weight, 25, close=False, xtitle=r'lep1-lep2 angle (rad)', ytitle="Events", title=r'lep1-lep2 angle',
+             saveas="disc_lep12_angle", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# Wp mass plot
+f.SignalHist(Wp_mass, weight, 25, close=False, xtitle=r'$W^+$ mass (GeV)', ytitle="Events", title=r'$W^+$ mass',
+             saveas="disc_Wp_mass", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# Wm mass plot
+f.SignalHist(Wm_mass, weight, 25, close=False, xtitle=r'$W^-$ mass (GeV)', ytitle="Events", title=r'$W^-$ mass',
+             saveas="disc_Wm_mass", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+# Neutrino pz plot
+f.SignalHist(neu_four_mom[:,3], weight, 25, close=False, xtitle=r'Neutrino $p_Z$ (GeV)', ytitle="Events", title=r'Neutrino $p_Z$',
+             saveas="disc_Neutrino_pz", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+
+'''Support vector machine'''
+
+
+'Data prep and models'
+
+# Ordering of the signal types
+# N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_ggA_600_500,N_ggA_500_400
+
+# First model
+model_1 = (delta_m,tops_angle,Z_pt,Wp_mass,lep12_angle)
+
+model_1_data = f.data_prep(model_1, N_ttZ, N_ttWp, N_ggA_460_360)
+
+model_1_prob_train,model_1_prob_test = s.SVM(model_1_data, '1')
+
+model_1_prob = np.concatenate((model_1_prob_train,model_1_prob_test))
+
+
+# Round to obtain the predicted value
+model_1_pred = np.around(model_1_prob)
+
+# f.ROC_Curve(model_1_data, model_1_pred, N_ttZ, '1')
+
+# f.Hist(model_1_prob, "Output", 20, close=False, label='Prob',
+#      xtitle="Probability of signal", ytitle="Events", title="Model_1", xmin=0, xmax=1, scale='log')
+
+
+
+###############
+### Runtime ###
+###############
 
 print('Runtime: {:.2f} seconds'.format(time.time() - start_time))
+
