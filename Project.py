@@ -15,6 +15,7 @@ start_time = time.time()
 import DataExtract as d
 import Functions as f
 import SVM as s
+import ML as m
 
 import pandas as pd
 import numpy as np
@@ -23,7 +24,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 '''
-#Data management
+DATA IMPORT
 '''
 # Import and manipulation
 path = "C:/Users/James/Desktop/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
@@ -38,13 +39,13 @@ N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_gg
 N = len(dataset)
 
 '''
-#Constants
+CONSTANTS & COUNTS
 '''
 
 W_mass = 80.38 # GeV
 top_mass = 172.76 # GeV
 
-'''Variable extraction'''
+'''VARIABLE EXTRACTION'''
 
 'Weights'
 weight = d.ExtractVariable(dataset,'weight',1,1)
@@ -96,8 +97,12 @@ top2_eta = d.ExtractVariable(dataset,'top', 2, 'eta')
 top2_phi = d.ExtractVariable(dataset,'top', 2, 'phi')
 top2_m = d.ExtractVariable(dataset,'top', 2, 'm')
 
+'ttZ'
+ztt_M = d.ExtractVariable(dataset,'ztt', 1, 'm')
+tt_M = d.ExtractVariable(dataset,'tt', 1, 'm')
+
 '''
-#Empty array definition
+EMPTY ARRAYS
 '''
 'Leptons'
 # Four momenta
@@ -198,12 +203,14 @@ delta_m = np.zeros(N)
 'SVM variables'
 tops_angle = np.zeros(N)
 lep12_angle = np.zeros(N)
+lep3_neu_angle = np.zeros(N)
+bjet12_angle = np.zeros(N)
 
-'''
-#Calculations
-'''
+delta_m_actual = np.zeros(N)
+ztt_m = np.zeros(N)
 
-'Main loop'
+'''MAIN LOOP'''
+
 for i in range(N):
     
     'Leptons'
@@ -241,7 +248,7 @@ for i in range(N):
     bjet2_four_mom [i,:] = f.four_mom(bjet2_pt[i], bjet2_eta[i], bjet2_phi[i])   
 
     '''
-    #Reconstructions
+    #RECONSTRUCTIONS
     '''    
 
     'Z boson'
@@ -334,25 +341,29 @@ for i in range(N):
     'SVM calculations'
     tops_angle[i] = f.angle(top1_four_mom[i],top2_four_mom[i])
     lep12_angle[i] = f.angle(lep1_four_mom[i],lep2_four_mom[i])
+    neu_four_mom[i,0] = (f.mom(neu_four_mom[i,1],neu_four_mom[i,2],neu_four_mom[i,3]))**2
+    lep3_neu_angle[i] = f.angle(lep3_four_mom[i],neu_four_mom[i])
+    bjet12_angle[i] = f.angle(bjet1_four_mom[i],bjet2_four_mom[i])
+    ztt_m[i] = ztt_M[i]
     
 
 '''
-#Plots
+PLOTS
 '''
 
 'Singular histograms'
 
 f.Hist(lep12_inv_mass, "Di-lepton (1-2) invariant mass", 20, close=True, label='lep12',
-     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (1-2) invariant mass")
+     xtitle="m (GeV)", ytitle="Events", title="Di-lepton (1-2) invariant mass")
 
 f.Hist(lep13_inv_mass, "Di-lepton (1-3) invariant mass", 20, close=True,  label='lep13',
-     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (1-3) invariant mass")
+     xtitle="m (GeV)", ytitle="Events", title="Di-lepton (1-3) invariant mass")
 
 f.Hist(lep23_inv_mass, "Di-lepton (2-3) invariant mass", 20, close=True,  label='lep23',
-     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-lepton (2-3) invariant mass")
+     xtitle="m (GeV)", ytitle="Events", title="Di-lepton (2-3) invariant mass")
 
 f.Hist(jet12_inv_mass, "Di-jet (1-2) invariant mass", 20, close=True,  label='jet12',
-     xtitle="$p_T$ (GeV)", ytitle="Events", title="Di-jet (1-2) invariant mass", xmax=160, xmin=0)
+     xtitle="m (GeV)", ytitle="Events", title="Di-jet (1-2) invariant mass", xmax=160, xmin=0)
 
 
 'Stacked signal histograms'
@@ -361,95 +372,254 @@ f.Hist(jet12_inv_mass, "Di-jet (1-2) invariant mass", 20, close=True,  label='je
 # Signals #     460_360    500_360    600_360
 ###########     600_400    600_500    500_400
 
+all_signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400']
+select_signals = ['ttZ', 'other','500_360', '600_360', '600_500']
+
+all_line = ['-',':','--','--','-',':']
+select_line = ['--',':','--','--','-','--']
+
 # Plots with all signals
 f.SignalHist(lep1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 1 $p_T$",
-             saveas="Lepton1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Lepton1_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(lep2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 2 $p_T$",
-             saveas="Lepton2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Lepton2_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(lep3_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 3 $p_T$",
-             saveas="Lepton3_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Lepton3_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(jet1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet1 $p_T$",
-             saveas="Jet1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Jet1_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(jet2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet2 $p_T$",
-             saveas="Jet2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Jet2_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(bjet1_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet1 $p_T$",
-             saveas="bJet1_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="bJet1_pt", signals = select_signals, line = select_line, scale='log')
 
 f.SignalHist(bjet2_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet2 $p_T$",
-             saveas="bJet2_pt", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="bJet2_pt", signals = select_signals, line = select_line, scale='log')
 
 # Z boson plot
 f.SignalHist(Z_pt, weight, 25, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="$Z_{pT}$",
-             saveas="Z_pT", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+             saveas="Z_pT", signals = select_signals, line = select_line, scale='log')
 
 # delta m plot
-f.SignalHist(delta_m, weight, 25, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
-             saveas="delta_m", signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400'])
+delta_m_bkg_count, delta_m_sig_count = f.SignalHist(delta_m, weight, 25, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
+             saveas="delta_m", signals = all_signals, line = all_line, scale='log')
 
 'Testing discriminating variables plots'
 
-#!!! Need to change ytitle on radian plots (Its not in: Events/GeV)
-
 # delta m discrim
-f.SignalHist(delta_m, weight, 25, close=False, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
-             saveas="disc_delta_m", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(delta_m, weight, 25, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
+             saveas="disc_delta_m", signals = select_signals, 
+             normed=True, line = select_line, xlim=[0, 1000])
 
 # tops angle plot
-f.SignalHist(tops_angle, weight, 25, close=False, xtitle=r't$\bar{t}$ angle (rad)', ytitle="Events", title=r't$\bar{t}$ angle',
-             saveas="disc_tt_angle", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(tops_angle, weight, 25, close=True, xtitle=r't$\bar{t}$ angle (rad)', ytitle="rad", title=r't$\bar{t}$ angle',
+             saveas="disc_tt_angle", signals = select_signals, 
+             normed=True, line = select_line)
 
 # met pt plot
-f.SignalHist(met_pt, weight, 25, close=False, xtitle=r'$E^{T}_{miss}$ (GeV)', ytitle="Events", title=r'$E^{T}_{miss}$',
-             saveas="disc_met_pt", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(met_pt, weight, 25, close=True, xtitle=r'$E^{T}_{miss}$ (GeV)', ytitle="Events", title=r'$E^{T}_{miss}$',
+             saveas="disc_met_pt", signals = select_signals, 
+             normed = True, line = select_line, xlim=[0, 600])
 
 # lep12 angle plot
-f.SignalHist(lep12_angle, weight, 25, close=False, xtitle=r'lep1-lep2 angle (rad)', ytitle="Events", title=r'lep1-lep2 angle',
-             saveas="disc_lep12_angle", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(lep12_angle, weight, 25, close=True, xtitle=r'lep1-lep2 angle (rad)', ytitle="rad", title=r'lep1-lep2 angle',
+             saveas="disc_lep12_angle", signals = select_signals, 
+             normed = True, line = select_line)
+
+# bjet12 angle plot
+f.SignalHist(bjet12_angle, weight, 25, close=True, xtitle=r'bjet1-bjet2 angle (rad)', ytitle="rad", 
+             title=r'bjet1-bjet2 angle',
+             saveas="disc_bjet12_angle", signals = select_signals, 
+             normed = True, line = select_line)
 
 # Wp mass plot
-f.SignalHist(Wp_mass, weight, 25, close=False, xtitle=r'$W^+$ mass (GeV)', ytitle="Events", title=r'$W^+$ mass',
-             saveas="disc_Wp_mass", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(Wp_mass, weight, 25, close=True, xtitle=r'$W^+$ mass (GeV)', ytitle="Events", title=r'$W^+$ mass',
+             saveas="disc_Wp_mass", signals = select_signals, 
+             normed = True, line = select_line, xlim=[0, 1000])
 
-# Wm mass plot
-f.SignalHist(Wm_mass, weight, 25, close=False, xtitle=r'$W^-$ mass (GeV)', ytitle="Events", title=r'$W^-$ mass',
-             saveas="disc_Wm_mass", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+# Wm mass plot - doesnt show much
+f.SignalHist(Wm_mass, weight, 25, close=True, xtitle=r'$W^-$ mass (GeV)', ytitle="Events", title=r'$W^-$ mass',
+             saveas="disc_Wm_mass", signals = select_signals, 
+             normed = True, line = select_line, xlim=[0, 600])
 
 # Neutrino pz plot
-f.SignalHist(neu_four_mom[:,3], weight, 25, close=False, xtitle=r'Neutrino $p_Z$ (GeV)', ytitle="Events", title=r'Neutrino $p_Z$',
-             saveas="disc_Neutrino_pz", signals = ['ttZ', 'other','500_360', '600_360', '600_500'])
+f.SignalHist(neu_four_mom[:,3], weight, 25, close=True, xtitle=r'Neutrino $p_Z$ (GeV)', ytitle="Events", title=r'Neutrino $p_Z$',
+             saveas="disc_Neutrino_pz", signals = select_signals, 
+             normed = True, line = select_line, xlim=[-500, 500])
 
-'''Support vector machine'''
+# Z pt plot
+f.SignalHist(Z_pt, weight, 25, close=True, xtitle=r'$p_T$ (GeV)', ytitle="Events", title=r'$Z_{pT}$',
+             saveas="disc_Z_pT", signals = select_signals, 
+             normed = True, line = select_line, xlim=[0, 600])
+
+# lep3-neu angle plot
+f.SignalHist(lep3_neu_angle, weight, 25, close=True, xtitle=r'lep3-neutrino angle (rad)', ytitle="rad", title=r'lep3-neutrino angle',
+             saveas="disc_lep3_neu_angle", signals = select_signals, 
+             normed = True, line = select_line)
+
+# lep3-neu angle plot
+f.SignalHist(ztt_m, weight, 25, close=True, xtitle=r'ztt_m (GeV)', ytitle="Events", title=r'ztt_m',
+             saveas="disc_ztt_m", signals = select_signals, 
+             normed = True, line = select_line)
 
 
-'Data prep and models'
+
+#############################
+'''Machine learning aspect'''
+#############################
+
+'DATA PREP'
+# ggA_500_360 - [N_ggA_460_360:N_ggA_500_360]
+# ggA_600_360 - [N_ggA_500_360:N_ggA_600_360]       length = 1092
+# ggA_600_400 - [N_ggA_600_360:N_ggA_600_400]
+# ggA_600_500 - [N_ggA_600_400:N_ggA_600_500]       length = 1372
+# ggA_500_400 - [N_ggA_600_500:N_ggA_500_400]
 
 # Ordering of the signal types
 # N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_ggA_600_500,N_ggA_500_400
 
+# First model - delta_m, Z_pt, tops_angle, lep12_angle, Wm_mass, Wp_mass, bjet12_angle
+model_1 = (delta_m, Z_pt, tops_angle, Wm_mass, Wp_mass, bjet12_angle)
+
+model_2 = (delta_m,bjet12_angle,met_pt,lep12_angle, Z_pt, tops_angle)
+
+# 600 500
+model_1_data, model_1_data_norm, X_train_1, y_train_1, X_test_1, y_test_1, y_binary_1 = f.data_prep(model_1, N_ttZ, N_ggA_600_400, N_ggA_600_500)
+
+# 600 360
+model_2_data, model_2_data_norm, X_train_2, y_train_2, X_test_2, y_test_2, y_binary_2 = f.data_prep(model_2, N_ttZ, N_ggA_500_360, N_ggA_600_360)
+
+'''SUPPORT VECTOR MACHINE'''
+SVM_optim = False
+
+#!!! MAKE ROC CURVES OF SIGNAL VS BKG
+
+# Hyper-parameter optimisation
+if SVM_optim:
+    s.SVM_optim(X_train_1, X_test_1, y_train_1, y_test_1)
+
+'600 500 signal'
 # First model
-model_1 = (delta_m,tops_angle,Z_pt,Wp_mass,lep12_angle)
+model_1_prob_train, model_1_prob_test = s.SVM(X_train_1, y_train_1, X_test_1, 
+                                              C=0.1, gamma= 20, tag='1', ForceModel=True)
 
-model_1_data = f.data_prep(model_1, N_ttZ, N_ttWp, N_ggA_460_360)
+# TRAINING IS STILL HIGH, SHOULD I LOWER C? IT MOVES THE CENTRE OF THE SIGNAL BUT SOMETHING ELSE COULD BE AT PLAY
+# C=0.001, gamma = 25 AUC is 0.68
+# C=0.001, gamma = 22 AUC is 0.71
+# GAMMA UP
+# C=0.001, gamma = 15 AUC is 0.68
+# C=0.001, gamma = 17 AUC is 0.67
+# C=0.001, gamma = 18 AUC is 0.66
+# C=0.001, gamma = 19 AUC is 0.69
+# START WITH GAMMA DOWN
+# TRY CHANGING GAMMA FOR 0.7 centre
+# C=0.0001, gamma = 20 similar to previous
+# C=0.0005, gamma = 20 AUC is 0.67, signal centre has moved ~0.5, perhaps change gamma, lets go one step further
+# C=0.001, gamma = 20 AUC is 0.7, BUT train is down to 0.99 and better separation BUT lower signal centered ~ 0.7
+# C=0.01, gamma = 20 AUC is 0.81
+# C=0.1, gamma = 20 AUC is 0.82
+# C=0.1, gamma = 20 AUC is 0.81
+# C=1, gamma = 20 AUC is 0.81
+# COULD WE BE OVERFITTING??
+# C=10, gamma = 20 AUC is 0.82
+# C=15, gamma = 20 AUC is 0.8
+# C=15, gamma = 15 AUC is 0.8 still a large peak near 0.2 but larger centered on 0.8/0.9
+# C=15, gamma = 10 AUC is 0.78 much better signal peak but it is central around 0.7/0.8
+# C=15, gamma = 0.01 AUC is 0.661 larger signal peak near background
+# C=10, gamma = 0.01 AUC is 0.69 larger signal peak near background
 
-model_1_prob_train,model_1_prob_test = s.SVM(model_1_data, '1')
-
+# Combine the probabilities
 model_1_prob = np.concatenate((model_1_prob_train,model_1_prob_test))
-
 
 # Round to obtain the predicted value
 model_1_pred = np.around(model_1_prob)
 
-# f.ROC_Curve(model_1_data, model_1_pred, N_ttZ, '1')
+# Plots
+f.ROC_Curve(y_binary_1, model_1_prob, '1')
 
-# f.Hist(model_1_prob, "Output", 20, close=False, label='Prob',
-#      xtitle="Probability of signal", ytitle="Events", title="Model_1", xmin=0, xmax=1, scale='log')
+svm_bkg_count, svm_sig_count = f.SVMHist(y_binary_1, model_1_prob, 20, close=False, label=['ttZ','ggA_600_500'], 
+        xtitle="Probability of signal", ytitle="Events", title="Model_1_600_500", saveas='SVM_Hist_600_500')
+
+'''
+'600 360 signal'
+# Second model
+model_2_prob_train, model_2_prob_test = s.SVM(X_train_2, y_train_2, X_test_2, 
+                                              C=1, gamma=20, tag='2', ForceModel=True)
+
+# C=30, gamma = 20 AUC is 0.82
+# C=30, gamma = 25 AUC is 0.82
+# C=25, gamma = 20 AUC is 0.83
+# C=6, gamma = 20 AUC is 0.825
+# C=10, gamma = 20 higher AUC 0.835 could be a fluct
+# C=17, gamma = 20 higher AUC 0.85 could be a fluct
+# C=20, gamma = 50 lower AUC
+# C=17, gamma = 50 better ROC AUC, same as 15
+# C=16, gamma = 50 lower ROC AUC
+# C=15, gamma = 50 no diff on last
+# C=15, gamma = 30 no diff on last
+# C=15, gamma = 25 "
+# C=15, gamma = 20 maybe some better peaks at 0 and 1
+# C=15, gamma = 15 no considerable difference
+# C=15, gamma = 13 no considerable difference
+# C=15, gamma = 12 no considerable difference
+# C=15, gamma = 10 better,
+# C=15, gamma = 7 even better!
+# C=15, gamma = 5 test is getting better
+# C=15, gamma=2  -  High train , low test
+# C=15, gamma=1  -  High train, decent test
+# C=15, gamma=0.5  -  Decent train and test
+# started analysing C, found its best to be about 15 (sequence of trials goes up)
+
+# Combine the probabilities
+model_2_prob = np.concatenate((model_2_prob_train,model_2_prob_test))
+
+# Round to obtain the predicted value
+model_2_pred = np.around(model_2_prob)
+
+# Plots
+f.ROC_Curve(y_binary_2, model_2_prob, '2')
+
+f.SVMHist(y_binary_2, model_2_prob, 20, close=False, label=['ttZ','ggA_600_360'], 
+        xtitle="Probability of signal", ytitle="Events", title="Model_2_600_360", saveas='SVM_Hist_600_360')
+
+'''
+
+'''SHALLOW NETWORK'''
+
+doML = False
+
+if doML:
+    model_length = len(model_1)
+    model = m.ML(X_train_1, y_train_1, X_test_1, y_test_1, model_length, doFit=True)
+    
+    # !!! This is also defined in f.dataprep, needs sorting out
+    N = model_1_data.shape[0]
+    N_train = int(2*N/3)
+    
+    # Take test data, split into background and signal
+    data_test = model_1_data_norm[N_train:,:]
+    x_bkg = data_test[  data_test[:,model_length] == 0  ][:,0:model_length] 
+    x_sig = data_test[  data_test[:,model_length] > 0 ][:,0:model_length]
+    x_all = model_1_data_norm[:][:,0:model_length]
+    
+    all_pred = model.predict(x_all)
+    res_sig = model.predict(x_sig)
+    res_bkg = model.predict(x_bkg)
+    
+    f.makePlot(res_bkg.flatten(),res_sig.flatten(), "nn_pred", 20, False, xtitle="NN output", title="All sample")
+
+'''LIMIT ESTIMATION'''
+
+limit_svm = f.getLimit(svm_sig_count, svm_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
+limit_delta_m = f.getLimit(delta_m_sig_count, delta_m_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
 
 
+
+#limit_m = f.approxLimit(sig_count,bkg_count)
 
 ###############
 ### Runtime ###

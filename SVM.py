@@ -6,79 +6,108 @@ Created on Mon Feb  8 13:50:38 2021
 """
 
 'Support vector machine program'
-import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from joblib import dump, load
 
-#from sklearn.metrics import classification_report,confusion_matrix,roc_curve,auc,precision_recall_curve,roc_curve
+# For the optimisation
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.svm import SVC
 
-ForceModel = False
+# SVM Classifiers offer good accuracy and perform faster prediction compared to Naïve Bayes algorithm. 
+# They also use less memory because they use a subset of training points in the decision phase. 
+# SVM works well with a clear margin of separation and with high dimensional space.
 
-def SVM(data, tag):
+def SVM(X_train, y_train, X_test, C, gamma, tag, ForceModel):
     
     # File for model save/load
-    svm_file = 'SVM_'+tag+'.joblib'
+    svm_file = 'SVM_models/SVM_'+tag+'.joblib'
 
-    # Shuffle the data
-    np.random.shuffle(data)
-    #!!! Note usage in this way forwards the shuffled data back into the functions 'data' input
-    # This is useful for analysis by eye
-    
-    # Separate into x and y
-    y_pos = len(data[0])-1
-    X = data[:,0:y_pos]
-    y = data[:,y_pos]
-    
-    # Normalisation of X
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_norm = scaler.transform(X)
-    
-    # Training and test splitting
-    N = data.shape[0]
-    N_train = int(2*N/3)
-    
-    X_train = X_norm[0:N_train,:]
-    y_train = y[0:N_train]
-    
-    X_test = X_norm[N_train:,:]
-    y_test = y[N_train:]
-    
     # Define a blank model
     clf = None
     
-    # If force model is enabled train the model every time
+    # If force model is enabled train the SVM
     if ForceModel:
-        print('Force model is enabled')
-        clf = svm.SVC(kernel='rbf', probability=True, cache_size=500) # Cache_size is memory usage
+        #clf = make_pipeline(StandardScaler(), svm.SVC(C = 0.5, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E-3))
+        clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, tol = 1E-3) # Cache_size is memory usage
+        # , class_weight='balanced'
         clf.fit(X_train, y_train)   # , sample_weight= np.ascontiguousarray(w_train) 
         dump(clf, svm_file)
-        print("Trained the SVM")
-        
-    # Otherwise try and load the model, and if it doesn't exist train it
+        print('Trained SVM ' + tag)
+        prob_train = clf.predict_proba(X_train)
+        prob_test = clf.predict_proba(X_test)
+        print('Classifier '+ tag + ' complete')
     else:
         try:
             clf = load(svm_file)
-            print('Loaded the SVM')
+            print('Loaded SVM ' + tag)
+            prob_train = clf.predict_proba(X_train)
+            prob_test = clf.predict_proba(X_test)
+            print('Classifier '+ tag + ' complete')
         except:
-            clf = svm.SVC(kernel='rbf', probability=True, cache_size=500) # Cache_size is memory usage
+            clf = svm.SVC(C = 0.01, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E0) # Cache_size is memory usage
             clf.fit(X_train, y_train)   # , sample_weight= np.ascontiguousarray(w_train) 
             dump(clf, svm_file)
-            print("Trained the SVM")
+            print('Trained SVM ' + tag)
+            prob_train = clf.predict_proba(X_train)
+            prob_test = clf.predict_proba(X_test)
+            print('Classifier '+ tag + ' complete')
     
-    # Make predictions
-    print('Classifier complete')
-    prob_train = clf.predict_proba(X_train)
-    prob_test = clf.predict_proba(X_test)
+    # Return the probability of a background for training and test data
+    #bkg_prob_train = prob_train[:,0]
+    #bkg_prob_test = prob_test[:,0]
     
     # Return the probability of a signal for training and test data
     sig_prob_train = prob_train[:,1]
     sig_prob_test = prob_test[:,1]
 
     
-    return sig_prob_train,sig_prob_test
+    return sig_prob_train, sig_prob_test #, bkg_prob_train, bkg_prob_test
 
+
+def SVM_optim(X_train, X_test, y_train, y_test):
+    
+    import warnings
+    warnings.filterwarnings('ignore')
+    
+    # Set the parameters by cross-validation
+    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1, 1E-1, 1E-2, 1E-3, 1E-4],
+                     'C': [0.001, 0.01, 0.1, 1, 10]}]
+    
+    scores = ['precision', 'recall']
+    
+    for score in scores:
+        print("# Tuning hyper-parameters for %s" % score)
+        print()
+    
+        clf = GridSearchCV(
+            SVC(class_weight='balanced'), tuned_parameters, scoring='%s_macro' % score
+        )
+        clf.fit(X_train, y_train)
+    
+        print("Best parameters set found on development set:")
+        print()
+        print(clf.best_params_)
+        print()
+        print("Grid scores on development set:")
+        print()
+        means = clf.cv_results_['mean_test_score']
+        stds = clf.cv_results_['std_test_score']
+        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+            print("%0.3f (+/-%0.03f) for %r"
+                  % (mean, std * 2, params))
+        print()
+    
+        print("Detailed classification report:")
+        print()
+        print("The model is trained on the full development set.")
+        print("The scores are computed on the full evaluation set.")
+        print()
+        y_true, y_pred = y_test, clf.predict(X_test)
+        print(classification_report(y_true, y_pred))
+        print()
+
+        warnings.filterwarnings('default')
 
 # Used rounding for predictions but will leave this here
 '''
