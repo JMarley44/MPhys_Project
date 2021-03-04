@@ -5,3 +5,4 @@
 *.npy
 *.pyc
 .spyproject/config/workspace.ini
+*.ini

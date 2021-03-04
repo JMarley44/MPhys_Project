@@ -6,6 +6,7 @@ Created on Fri Dec 11 16:12:22 2020
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import sklearn.metrics as metrics
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -54,6 +55,8 @@ def angle(f1, f2):
     angle = np.arccos(dot/mag1_mag2)
     return angle
 
+
+#!!! tag isnt used
 # Single histogram plot
 def Hist(X, tag, Nb, close, label, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
@@ -84,24 +87,34 @@ def Hist(X, tag, Nb, close, label, **kwargs):
     # Calculate the bins
     bins = np.linspace(themin, themax, Nb)
     
+    # Take every other value of the bin for the major ticks
+    major_ticks = bins[::2]
+
     # Plot the histogram
     plt.hist(X, bins=bins, label=label)
-      
+
     # Plot customisation
     plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
     plt.legend(loc='upper right')
+    
+    ax.set_xticks(major_ticks)
     ax.set_xticks(bins, minor=True)
-    ax.grid(which='minor', axis='x', alpha = 0.5)
+    
+    ax.grid(which='both', axis='x', alpha = 0.5)
     ax.grid(which='major', axis='y', alpha = 0.5)
-    plt.xticks(fontsize=20)
+    
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+
     plt.xlim(themin, themax)
+    plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.yscale(scale)
     plt.savefig("Plots/"+title+".png")
     if close: plt.close()
     
+###############################################################################
 
 # Stacked histograms with signal
 '''
@@ -116,26 +129,28 @@ normed - whether to normalise - default: False
 signal is what signal types to plot
 '''
         
-def SignalHist(X, weight, Nb, close, **kwargs):
+# Note for better bins use (xmax-xmin)/(Nb-1) = Bin width
+
+def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     
-    N_ttZ = 6979
-    N_ttWp = 7455
-    N_ttWm = 7223
-    N_ggA_460_360 = 8219
-    N_ggA_500_360 = 8935
-    N_ggA_600_360 = 10027
-    N_ggA_600_400 = 11195
-    N_ggA_600_500 = 12567
-    N_ggA_500_400 = 14627
+    N_ttZ = N_arr[0]
+    N_ttWm = N_arr[1]
+    N_ttWp = N_arr[2]
+    N_ggA_460_360 = N_arr[3]
+    N_ggA_500_360 = N_arr[4]
+    N_ggA_600_360 = N_arr[5]
+    N_ggA_600_400 = N_arr[6]
+    N_ggA_600_500 = N_arr[7]
+    N_ggA_500_400 = N_arr[8]
     
     label = [r'other',r't$\bar{t}$Z','ggA ($m_A$=460, $m_H$=360)', 'ggA ($m_A$=500, $m_H$=360)', 'ggA ($m_A$=600, $m_H$=360)'
          , 'ggA ($m_A$=600, $m_H$=400)', 'ggA ($m_A$=600, $m_H$=500)', 'ggA ($m_A$=500, $m_H$=400)']
     
-    color = ['lightgreen','cyan','cornflowerblue','red','gold','indigo','black','maroon']
+    color = ['lightgreen','cyan','cornflowerblue','red','indigo','gold','black','maroon']
     
+    # Test whether a given bkg/sig is present
     bkg_test = np.zeros(2) # other, ttZ
     sig_test = np.zeros(6) # 460_360, 500_360, 600_360, 600_400, 600_500, 500_400
-    
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     global save_count
@@ -218,13 +233,7 @@ def SignalHist(X, weight, Nb, close, **kwargs):
                     weight_500_400 = weight[N_ggA_600_500:N_ggA_500_400]
                     sig_test[5] = 1
                 else:
-                    print('Unknown signal in SignalHist')
-
-# ggA_500_360 - [N_ggA_460_360:N_ggA_500_360]
-# ggA_600_360 - [N_ggA_500_360:N_ggA_600_360]
-# ggA_600_400 - [N_ggA_600_360:N_ggA_600_400]
-# ggA_600_500 - [N_ggA_600_400:N_ggA_600_500]
-# ggA_500_400 - [N_ggA_600_500:N_ggA_500_400]
+                    print('Unknown bkg/sig in SignalHist')
 
     # Save names don't exist, give them arbitrary values
     if 'saveas' not in locals():
@@ -252,45 +261,109 @@ def SignalHist(X, weight, Nb, close, **kwargs):
     if 'bkg_maxim' not in locals():
         bkg_maxim = np.nanmax(all_bkg_max)
         bkg_minim = np.nanmin(all_bkg_min)
-    
-    #print(bkg_maxim)
-    
+
     # Calculate bins and widths
     bins = np.linspace(bkg_minim, bkg_maxim, Nb)
     width = bins[1]-bins[0]
-
-    bins_plot = np.delete(bins,Nb-1)
-    stack_count=0
     
-    for i in range(len(bkg_test)):
-        if bkg_test[0] == 1:
-            count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i], density=normed)
+    # Take every other value of the bin for the major tick labels
+    major_ticks = bins[::2]
+
+    # Bin centres
+    bins_plot = np.delete(bins,Nb-1)
+    bins_centre = bins_plot + (width/2)
+    
+    # Define an area array for normalisation:
+    area = np.zeros(bkg_length)
+    bkg_weight_sum = np.zeros(bkg_length)
+    
+    # Define stackable counts and errors
+    stack_count = 0  
+    final_error = 0
+
+    for i in range(bkg_length):
+        if bkg_test[i] == 1:
+            # Calculation of the max counts
+            count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i])
+            # Total area for each histogram
+            area[i] = np.sum(count * width)
+            bkg_weight_sum[i] = np.sum(weight[i])
+            
+    # Total area for all histograms
+    all_area = np.sum(area)
+    bkg_weight_tot = np.sum(bkg_weight_sum)
+            
+    for i in range(bkg_length):
+        if bkg_test[i] == 1:
+            # Calculation of the counts
+            count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i])
+
             if normed:
-                count = count/2
-            plt.bar(bins_plot, count, label=label[i], width = width, align='edge', bottom = stack_count, color=color[i])
-            plt.legend(loc='upper right')
-            stack_count = stack_count + count
-        if bkg_test[1] == 1:
-            ttZcount,edge = np.histogram(bkg[i], bins=bins, weights=weight[i], density=normed)
-            if normed:
-                count = count/2
-            plt.bar(bins_plot, ttZcount, label=label[i], width = width, align='edge', bottom = stack_count, color=color[i])
-            plt.legend(loc='upper right')
+                # Normalise all backgrounds to the sum of their weights
+                count = (count/all_area)*bkg_weight_tot
+                N =  ( np.sum(weight[i]) *(bins[-1]-bins[0]) ) / len(count)
+            else:
+                N = 1
+
+            # Save the other and ttZ counts for return
+            if i == 0:
+                other_count = count
+
+            if i == 1:
+                ttZcount = count
+                
+            # Calculate the error
+            error = np.sqrt((np.histogram(bkg[i], bins=bins, 
+                                              weights=weight[i]*weight[i])[0]).astype(float) / N)
+            
+            # Addition of all background errors
+            final_error = np.sqrt((final_error**2) + (error**2))
+    
+            # Make the plot
+            plt.bar(bins_plot, count, label=label[i], width = width, align='edge', 
+                    bottom = stack_count, color=color[i])
+            
+            # Add errorbars if it's the final background
+            if i == (bkg_length-1):
+                plt.errorbar(bins_centre, count+stack_count, barsabove=True, ls='none', 
+                              yerr=final_error, marker='+',color='red')
+
+            # Add the count to the stack for the next iteration
             stack_count = stack_count + count
             
     for i in range(len(sig_test)):
         if sig_test[i] == 1:
-            step_count,edge = np.histogram(sig[i], bins=bins, weights=weight[bkg_length+i], density=normed)
+            # Calculation of the counts
+            step_count,edge = np.histogram(sig[i], bins=bins, weights=weight[bkg_length+i],
+                                           density=normed)
+            
+            # Normalise to the sum of the weights if plot is normalised
+            if normed:
+                step_count = step_count*np.sum(weight[bkg_length+i])
+                
+            # Extend the step in x to reach the edge of the plot
             step_count_ext = np.append(step_count, step_count[len(step_count)-1])
-            plt.step(bins, step_count_ext, label=label[bkg_length+i], color=color[bkg_length+i], where='post', linewidth = 2.0, linestyle=linestyle[i])
+            
+            # Make the plot
+            plt.step(bins, step_count_ext, label=label[bkg_length+i], color=color[bkg_length+i], 
+                     where='post', linewidth = 2.0, linestyle=linestyle[i])
+            
+            # Save the signal count for specific signal for return
+            # Needs to be changed to extract a given signal
             if i == 4:
-                step_count_save = step_count
+                sigcount = step_count
+    
     
     # Plot customisation
+    
     if ytitle_in == 'Events':
+        # If a GeV plot use GeV bins and decimal format
         ytitle = ('Events' + " / {width:} GeV").format(width = int(width))
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.d'))
     else:
+        # If a rad plot use rad bins and float format
         ytitle = ('Events' + " / {width:.3f} rad").format(width = width)
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     
     if normed:
         ytitle = ytitle + ' (Normalised)'
@@ -299,20 +372,38 @@ def SignalHist(X, weight, Nb, close, **kwargs):
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
     plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .9), framealpha=1, edgecolor='k')
+    
+    # Define ticks for numbering (major only) and grids (both)
+    ax.set_xticks(major_ticks)
     ax.set_xticks(bins, minor=True)
-    ax.grid(which='minor', axis='x', alpha = 0.5)
+    
+    # Add axes grids to x and y
+    ax.grid(which='both', axis='x', alpha = 0.5)
     ax.grid(which='major', axis='y', alpha = 0.5)
+        
+    # Rotate the x labels 45 degrees
+    #fig.autofmt_xdate(rotation=45)
+        
+    # Set axis font sizes
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
+    
+    # Set y scale
     plt.yscale(scale)
     
+    # Set x limit 
     plt.xlim(bkg_minim, bkg_maxim)
+    # Set y limit, upper limit is automatic, non-zero for a log scale
+    if scale == 'log':
+        plt.gca().set_ylim(bottom=0.01)
+    else:
+        plt.gca().set_ylim(bottom=0)
     
     # String for adding to the text box
     string = ('$\u221As = 13 TeV, 139$ $fb^{-1}$')
     
     # Add a text box
-    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=12, fontweight='bold', horizontalalignment='right',
+    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=10, fontweight='bold', horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
     # Save the figure, close if close is set true
@@ -322,9 +413,18 @@ def SignalHist(X, weight, Nb, close, **kwargs):
     else:
         plt.show()    
         
-    return ttZcount, step_count_save
+    # Return the counts, if required
+    return ttZcount, sigcount
         
+# Alternative errorbars wrt axes
+# https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.errorbar.html
+# errorevery may be more suitable than erroroffset in future
+
+# ax.errorbar(bins_centre+err_offset[i], (count+stack_count), xerr=None, yerr=error, 
+#             ls='none', ecolor='err_color[i], fmt = 'k+')
         
+###############################################################################
+
 # Stacked histograms with signal
 #!!! Change green description
 
@@ -337,10 +437,20 @@ label - labels for histogram with signal label on the end
 
 kwargs - xtitle, ytitle, title, saveas
 '''
-def SVMHist(y_binary, model_prob, Nb, close, label, **kwargs):
+def SVMHist(y_binary, model_prob, Nb, weight, N_arr, close, label, **kwargs):
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     global save_count
+    
+    # Only need the ttZ background
+    N_ttZ = N_arr[0]
+    N_ttWp = N_arr[2]
+    N_ggA_460_360 = N_arr[3]
+    N_ggA_500_360 = N_arr[4]
+    N_ggA_600_360 = N_arr[5]
+    N_ggA_600_400 = N_arr[6]
+    N_ggA_600_500 = N_arr[7]
+    N_ggA_500_400 = N_arr[8]
     
     # Extract additonal arguments from kwargs
     for i, j in kwargs.items():
@@ -352,10 +462,38 @@ def SVMHist(y_binary, model_prob, Nb, close, label, **kwargs):
             title = j
         elif i=="saveas":
             saveas = j
+
+    # Extract the ttZ weight
+    ttZ_weight = (weight[0:N_ttZ])[0]
+
+
+    # Extract the signal weights based on the label
+    # Take the first value since they're all the same per signal
+
+    if label[1] == 'ggA_460_360':
+        sig_weight = (weight[N_ttWp:N_ggA_460_360])[0]
+
+    elif label[1] == 'ggA_500_360':
+        sig_weight = (weight[N_ggA_460_360:N_ggA_500_360] )[0]
+        
+    elif label[1] == 'ggA_600_360':
+        sig_weight = (weight[N_ggA_500_360:N_ggA_600_360])[0]
+
+    elif label[1] == 'ggA_600_400':
+        sig_weight = (weight[N_ggA_600_360:N_ggA_600_400] )[0]
+        
+    elif label[1] == 'ggA_600_500':
+        sig_weight = (weight[N_ggA_600_400:N_ggA_600_500])[0]
+        
+    elif label[1] == 'ggA_500_400':
+        sig_weight = (weight[N_ggA_600_500:N_ggA_500_400])[0]
+        
     
-    color = ['cornflowerblue','red']
+
+
+    color = ['cyan','red']
     
-    # If color and saveas don't exist, give them arbitrary values
+    # If saveas doesn't exist, give them arbitrary values
     if 'saveas' not in locals():
         saveas = ("unnamed_plot_%d" %save_count)
         save_count = save_count+1
@@ -367,36 +505,32 @@ def SVMHist(y_binary, model_prob, Nb, close, label, **kwargs):
     
     bins_plot = np.delete(bins,Nb-1)
 
-    plot = np.zeros(len(y_binary))
-    z = 0
-    
-    for i in range(len(y_binary)-1):
-        if y_binary[i] == 0:
-            plot[z] = model_prob[i]
-            z = z + 1
-            
-    mid_count = z
-            
-    for i in range(len(y_binary)-1):
-        if y_binary[i] == 1:
-            plot[z] = model_prob[i]
-            z = z + 1
+    # Take every other value of the bin for the major ticks
+    major_ticks = bins[::2]
         
     # The predicted probability of signal for background events
-    X = plot[0:mid_count]
+    X = model_prob[y_binary==0]
     # The predicted probability of signal for signal events
-    X1 = plot[mid_count:z]
+    X1 = model_prob[y_binary==1]
     
     # Plot background histogram
 
     count,edge = np.histogram(X, bins=bins)
+    
+    # Apply the weight
+    count = count*ttZ_weight
+    
     plt.bar(bins_plot, count, label=label[0], width = width, align='edge', color=color[0])
     
     # Plot the signal
-
     step_count,edge = np.histogram(X1, bins=bins)
+    
+    # Apply the weight
+    step_count = step_count*sig_weight
+    
     step_count_ext = np.append(step_count, step_count[len(step_count)-1])
-    plt.step(bins, step_count_ext, label=label[1], color=color[1], where='post', linewidth = 2.0, linestyle='dashed')
+    plt.step(bins, step_count_ext, label=label[1], color=color[1], where='post', 
+             linewidth = 2.0, linestyle='dashed')
     
     # Plot customisation
     plt.title(title, fontsize=40)
@@ -404,9 +538,15 @@ def SVMHist(y_binary, model_prob, Nb, close, label, **kwargs):
     plt.ylabel(ytitle, fontsize=25)
     plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
     plt.xlim(0, 1)
+    
+    # Define ticks for numbering (major only) and grids (both)
+    ax.set_xticks(major_ticks)
     ax.set_xticks(bins, minor=True)
-    ax.grid(which='minor', axis='x', alpha = 0.5)
+    
+    # Add axes grids to x and y
+    ax.grid(which='both', axis='x', alpha = 0.5)
     ax.grid(which='major', axis='y', alpha = 0.5)
+    
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.yscale('log')
@@ -421,14 +561,43 @@ def SVMHist(y_binary, model_prob, Nb, close, label, **kwargs):
         
     return count, step_count
 
+# IN CASE I WANT TO PLOT THEM ON THE SAME PLOT, FOR MAIN
+
+# model_1_probs = (model_1_prob_train,model_1_prob_test)
+
+# model_test = type(model_1_probs) is tuple
+
+# model_all_test = type(model_1_all_prob) is tuple
+
+# print(model_test)
+# print(model_all_test)
+
+
+
+# OLD SEPARATION
+# plot = np.zeros(len(y_binary))
+# z = 0
+
+# for i in range(len(y_binary)-1):
+#     if y_binary[i] == 0:
+#         plot[z] = model_prob[i]
+#         z = z + 1
+        
+# mid_count = z
+        
+# for i in range(len(y_binary)-1):
+#     if y_binary[i] == 1:
+#         plot[z] = model_prob[i]
+#         z = z + 1
+
 
 '''
 Function to prepare x and y data for machine learning
 '''
-def data_prep(variables, N_ttZ, signal_start, signal_end):
-    
-    N = 14627
-    
+def data_prep(variables, N_ttZ, N, signal_start, signal_end):
+
+    #!!! Put N_arr into here    
+
     sig_length = signal_end - signal_start
     
     if len(variables) < 100:
@@ -451,7 +620,7 @@ def data_prep(variables, N_ttZ, signal_start, signal_end):
     ydata = np.concatenate((zeros,ones))
     
     data = np.hstack((xdata,ydata))
-    
+
     # Shuffle the data
     np.random.shuffle(data)
 
@@ -464,39 +633,48 @@ def data_prep(variables, N_ttZ, signal_start, signal_end):
     X = data[:,0:y_pos]
     y_binary = data[:,y_pos]
     
-    ### Normalisation of X ###
+    ### Normalisation ###
+    ###  Choose one   ###
     
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_norm = scaler.transform(X)
-    
-    #Normalised dataset
-    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
-    data_norm = np.hstack((X_norm,y_binary_data))
-    
-    ### No Normalisat of X ###
+    ### No Normalistation ###
     # X_norm = X
     
-    ###Both above
+    ###   Standard scalar  ###
+    # scaler = StandardScaler()
+    # scaler.fit(X)
+    # X_norm = scaler.transform(X)
+
+    ###   Scalar 0-1   ###
+    scaler = MinMaxScaler(feature_range=(0,1))
+    scaler.fit(X)
+    X_norm = scaler.transform(X)
+
+    # Get train and test data
     
     X_train = X_norm[0:N_train,:]
     y_train = y_binary[0:N_train]
     
     X_test = X_norm[N_train:,:]
     y_test = y_binary[N_train:]
+
     
-    ### Nikos method
-    # X_test_sc = X[N_train:,:]
-    # X_train_sc = X[0:N_train,:]
-    # scaler = MinMaxScaler(feature_range=(0,1))
-    
-    # X_train = scaler.fit_transform(X_train_sc)
-    
-    # X_test = scaler.transform(X_test_sc)
-    
+    # TESTING
+    # X_train = X[0:N_train,:]
     # y_train = y_binary[0:N_train]
     
+    # X_test = X[N_train:,:]
     # y_test = y_binary[N_train:]
+
+    # scaler = MinMaxScaler(feature_range=(0,1))
+
+    # X_train_sc = scaler.fit_transform(X_train)
+    # X_test_sc = scaler.transform(X_test)
+    
+    # X_norm = np.concatenate((X_train_sc,X_test_sc))
+
+    #Normalised dataset
+    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
+    data_norm = np.hstack((X_norm,y_binary_data))
     
     # Convert y to integer form
     y_binary_int = y_binary.astype(int)
@@ -504,7 +682,7 @@ def data_prep(variables, N_ttZ, signal_start, signal_end):
     # Return the data for visualisation, the training and test sample and the true binary
     return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int
     
-def ROC_Curve(y_binary, model_pred, tag):
+def ROC_Curve(y_binary, model_pred, close, tag):
     
     length = len(model_pred)
     N_train = int(2*length/3)
@@ -537,6 +715,11 @@ def ROC_Curve(y_binary, model_pred, tag):
     plt.yticks(fontsize=20)
     plt.show()
     plt.savefig("Plots/ROC_Curve_Model_"+tag+".png")
+    
+    if close: 
+        plt.close()
+    else:
+        plt.show()
     
 '''LIMIT CALCULATION'''
     
@@ -593,6 +776,7 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
     
     return lim
     
+'Old make plot function for NN'
 def makePlot(X1,X2, tag, Nb, close, **kwargs):
 
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(10.0,8.0))

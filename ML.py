@@ -16,7 +16,9 @@ doES = True
 def ML(X_train, y_train, X_test, y_test, model_length, doFit):
     
     if doFit:
+        print('*************************')
         print('Forcing ML Fit is enabled')
+        print('*************************')
         
         # Define the model
         model = Sequential()

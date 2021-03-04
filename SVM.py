@@ -9,16 +9,13 @@ Created on Mon Feb  8 13:50:38 2021
 from sklearn import svm
 from joblib import dump, load
 
-# For the optimisation
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report
 from sklearn.svm import SVC
 
 # SVM Classifiers offer good accuracy and perform faster prediction compared to Naïve Bayes algorithm. 
 # They also use less memory because they use a subset of training points in the decision phase. 
 # SVM works well with a clear margin of separation and with high dimensional space.
 
-def SVM(X_train, y_train, X_test, C, gamma, tag, ForceModel):
+def SVM(X_train, y_train, X_test, C, gamma, tol, tag, ForceModel):
     
     # File for model save/load
     svm_file = 'SVM_models/SVM_'+tag+'.joblib'
@@ -29,7 +26,7 @@ def SVM(X_train, y_train, X_test, C, gamma, tag, ForceModel):
     # If force model is enabled train the SVM
     if ForceModel:
         #clf = make_pipeline(StandardScaler(), svm.SVC(C = 0.5, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E-3))
-        clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, tol = 1E-3) # Cache_size is memory usage
+        clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, tol = tol) # Cache_size is memory usage
         # , class_weight='balanced'
         clf.fit(X_train, y_train)   # , sample_weight= np.ascontiguousarray(w_train) 
         dump(clf, svm_file)
@@ -65,49 +62,6 @@ def SVM(X_train, y_train, X_test, C, gamma, tag, ForceModel):
     return sig_prob_train, sig_prob_test #, bkg_prob_train, bkg_prob_test
 
 
-def SVM_optim(X_train, X_test, y_train, y_test):
-    
-    import warnings
-    warnings.filterwarnings('ignore')
-    
-    # Set the parameters by cross-validation
-    tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1, 1E-1, 1E-2, 1E-3, 1E-4],
-                     'C': [0.001, 0.01, 0.1, 1, 10]}]
-    
-    scores = ['precision', 'recall']
-    
-    for score in scores:
-        print("# Tuning hyper-parameters for %s" % score)
-        print()
-    
-        clf = GridSearchCV(
-            SVC(class_weight='balanced'), tuned_parameters, scoring='%s_macro' % score
-        )
-        clf.fit(X_train, y_train)
-    
-        print("Best parameters set found on development set:")
-        print()
-        print(clf.best_params_)
-        print()
-        print("Grid scores on development set:")
-        print()
-        means = clf.cv_results_['mean_test_score']
-        stds = clf.cv_results_['std_test_score']
-        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-            print("%0.3f (+/-%0.03f) for %r"
-                  % (mean, std * 2, params))
-        print()
-    
-        print("Detailed classification report:")
-        print()
-        print("The model is trained on the full development set.")
-        print("The scores are computed on the full evaluation set.")
-        print()
-        y_true, y_pred = y_test, clf.predict(X_test)
-        print(classification_report(y_true, y_pred))
-        print()
-
-        warnings.filterwarnings('default')
 
 # Used rounding for predictions but will leave this here
 '''
