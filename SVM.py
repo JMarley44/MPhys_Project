@@ -9,8 +9,6 @@ Created on Mon Feb  8 13:50:38 2021
 from sklearn import svm
 from joblib import dump, load
 
-from sklearn.svm import SVC
-
 # SVM Classifiers offer good accuracy and perform faster prediction compared to Naïve Bayes algorithm. 
 # They also use less memory because they use a subset of training points in the decision phase. 
 # SVM works well with a clear margin of separation and with high dimensional space.
@@ -25,30 +23,27 @@ def SVM(X_train, y_train, X_test, C, gamma, tol, tag, ForceModel):
     
     # If force model is enabled train the SVM
     if ForceModel:
-        #clf = make_pipeline(StandardScaler(), svm.SVC(C = 0.5, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E-3))
-        clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, tol = tol) # Cache_size is memory usage
-        # , class_weight='balanced'
-        clf.fit(X_train, y_train)   # , sample_weight= np.ascontiguousarray(w_train) 
+        clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, 
+                      tol = tol, break_ties=True, decision_function_shape = 'ovr') # Cache_size is memory usage
+        
+        clf.fit(X_train, y_train)
         dump(clf, svm_file)
         print('Trained SVM ' + tag)
         prob_train = clf.predict_proba(X_train)
         prob_test = clf.predict_proba(X_test)
-        print('Classifier '+ tag + ' complete')
     else:
         try:
             clf = load(svm_file)
             print('Loaded SVM ' + tag)
             prob_train = clf.predict_proba(X_train)
             prob_test = clf.predict_proba(X_test)
-            print('Classifier '+ tag + ' complete')
         except:
             clf = svm.SVC(C = 0.01, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E0) # Cache_size is memory usage
-            clf.fit(X_train, y_train)   # , sample_weight= np.ascontiguousarray(w_train) 
+            clf.fit(X_train, y_train)
             dump(clf, svm_file)
             print('Trained SVM ' + tag)
             prob_train = clf.predict_proba(X_train)
             prob_test = clf.predict_proba(X_test)
-            print('Classifier '+ tag + ' complete')
     
     # Return the probability of a background for training and test data
     #bkg_prob_train = prob_train[:,0]

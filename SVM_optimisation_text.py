@@ -8,15 +8,26 @@ Created on Thu Mar  4 21:19:46 2021
 #C = , gamma =  AUC is 
 
 
+#C = 100, gamma =  AUC is 
+    
+#C = 10, gamma =  AUC is 
+
+#C = 1, gamma =  AUC is 
+
+#C = 0.1, gamma =  AUC is 
+
+#C = 0.01, gamma =  AUC is 
+
+
 sig_600_500 = False
 sig_500_400 = False
 
 while sig_600_500:
     #C = 100, gamma = 100 AUC is 0.7 TRAIN IS 1!!!
     
-    #C = 10, gamma = 100 AUC is 0.693 OVERTRAIN BUT NOT AS BAD
+    #C = 10, gamma = 100 AUC is 0.693 OVERTRAIN
     
-    #C = 1, gamma = 100 AUC is 0.697 OVERTRAIN BUT NOT AS BAD
+    #C = 1, gamma = 100 AUC is 0.697 OVERTRAIN
     
     #C = 0.1, gamma = 100 AUC is 0.67 OVERTRAIN
     
@@ -65,6 +76,28 @@ while sig_600_500:
     #C = 0.1, gamma = 0.01 AUC is 0.606, range 0.1-0.9
     
     #C = 0.01, gamma = 0.01 AUC is 0.627, no noticeable features
+    
+    
+    #C = 100, gamma = 0.001 AUC is 0.636 0.1-1
+    
+    #C = 10, gamma = 0.001 AUC is 0.641
+    
+    #C = 1, gamma = 0.001 AUC is 0.67 - seems to be an anomaly not that great
+    
+    #C = 0.1, gamma = 0.001 AUC is 0.659, plot range is 0.2-0.8
+    
+    #C = 0.01, gamma = 0.001 AUC is 0.635, plot range .2-1
+    
+    
+    #C = 100, gamma = 0.0001 AUC is 0.63, range 0.1- 0.8
+    
+    #C = 10, gamma = 0.0001 AUC is 0.66, range 0.1-0.8
+    
+    #C = 1, gamma = 0.0001 AUC is 0.644 ramge 0.1-0.95
+    
+    #C = 0.1, gamma = 0.0001 AUC is 0.631 range 0.2-0.8
+    
+    #C = 0.01, gamma = 0.0001 AUC is 0.595 0.2 - 0.9
     
     # LETS TRY C AND GAMMA IN POWERS, FOR TOL=1
     

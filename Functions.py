@@ -44,21 +44,52 @@ def inv_mass(four_mom):
     m0 = np.sqrt(four_mom[0]**2-p**2)
     return m0
 
-def angle(f1, f2):
-    dot = (f1[0]*f2[0])+(f1[1]*f2[1])+(f1[2]*f2[2])+(f1[3]*f2[3])
+def dphi(phi1, phi2):
+    dphi = phi1-phi2
     
-    mag1 = np.sqrt((f1[0]**2)+(f1[1]**2)+(f1[2]**2)+(f1[3]**2))
-    mag2 = np.sqrt((f2[0]**2)+(f2[1]**2)+(f2[2]**2)+(f2[3]**2))
+    # Try for an array, except float (for lepton calculcations)
     
-    mag1_mag2 = mag1*mag2
+    try:
+        length = len(dphi)
     
-    angle = np.arccos(dot/mag1_mag2)
-    return angle
+        for i in range(length):
+            if dphi[i]>np.pi:
+                dphi[i] = dphi[i]-np.pi
+            elif dphi[i]<(-1*np.pi):
+                dphi[i] = dphi[i]+np.pi
+                
+    except:
+        if dphi>np.pi:
+                dphi = dphi-np.pi
+        elif dphi<(-1*np.pi):
+                dphi = dphi+np.pi
+            
+    return dphi
 
+def drangle(dphi, eta1, eta2):
+    deta = eta1-eta2
+    
+    # Try for an array, except float (for lepton calculcations)
+    
+    try:
+        length = len(deta)
 
-#!!! tag isnt used
-# Single histogram plot
-def Hist(X, tag, Nb, close, label, **kwargs):
+        deta.astype(float)
+        dphi.astype(float)
+        
+        drangle = np.zeros(length)
+        
+        for i in range(length):
+            drangle[i] = np.sqrt((dphi[i]**2)+(deta[i]**2))
+              
+    except:
+
+        drangle = np.sqrt((dphi**2)+(deta**2))
+    
+    return drangle
+
+# Single histogram plot for the Z invariant #!!! Needs error bars?
+def Hist(X, Nb, close, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     
     # Definition of variables
@@ -80,10 +111,12 @@ def Hist(X, tag, Nb, close, label, **kwargs):
             themin = value
         elif key=="scale":
             scale = value
+        elif key=="label":
+            label = value
     
     if 'scale' not in locals():
         scale = 'linear'
-        
+
     # Calculate the bins
     bins = np.linspace(themin, themax, Nb)
     
@@ -91,13 +124,12 @@ def Hist(X, tag, Nb, close, label, **kwargs):
     major_ticks = bins[::2]
 
     # Plot the histogram
-    plt.hist(X, bins=bins, label=label)
+    plt.hist(X, bins=bins)
 
     # Plot customisation
     plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right')
     
     ax.set_xticks(major_ticks)
     ax.set_xticks(bins, minor=True)
@@ -112,7 +144,11 @@ def Hist(X, tag, Nb, close, label, **kwargs):
     plt.yticks(fontsize=20)
     plt.yscale(scale)
     plt.savefig("Plots/"+title+".png")
-    if close: plt.close()
+    
+    if close: 
+        plt.close()
+    else:
+        plt.show()   
     
 ###############################################################################
 
@@ -121,15 +157,16 @@ def Hist(X, tag, Nb, close, label, **kwargs):
 X - Input data array
 weight - weights of dataset
 Nb - Number of bins for the histogram
+N_arr - The array of N for separation
 close - Whether to close the plot or not
 
-kwargs - xtitle, ytitle, title, saveas, normed, signal
+kwargs - xtitle, ytitle, title, saveas, shaped, signals
 
-normed - whether to normalise - default: False 
-signal is what signal types to plot
+shaped - whether to do a shape comparison
+signals - what signal types to plot
 '''
         
-# Note for better bins use (xmax-xmin)/(Nb-1) = Bin width
+# Note for better bins could use (xmax-xmin)/(Nb-1) = Bin width
 
 def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     
@@ -175,7 +212,8 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     weight_600_500 = None
     weight_500_400 = None
     
-    normed = False
+    shaped = False
+    addText = False
     scale = 'linear'
 
     # Extract additonal arguments from kwargs
@@ -188,16 +226,18 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
             title = j
         elif i=="saveas":
             saveas = j
-        elif i =="normed":
-            normed = j
+        elif i =="shaped":
+            shaped = j
         elif i =="line":
             linestyle = j
         elif i =="scale":
             scale = j
         elif i =='xlim':
-            #!!! This needs sorting out
             bkg_minim = j[0]
             bkg_maxim = j[1]
+        elif i =='addText':
+            addText = True
+            add_string = j
         elif i == "signals":
             for k in range(len(j)):
                 if j[k] == 'other':
@@ -244,21 +284,22 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     if 'linestyle' not in locals():
         linestyle = ['--' for i in range(6)]
             
+    # Form tuples
     bkg = ([X_other, X_ttZ])
     sig = ([X_460_360, X_500_360, X_600_360, X_600_400, X_600_500, X_500_400])
     weight = ([weight_other, weight_ttZ, weight_460_360, weight_500_360,weight_600_360,weight_600_400,weight_600_500 ,weight_500_400])
     
+    # Lengths of data
     bkg_length = len(bkg)
+    sig_length = len(sig_test)
     
-    # Max and min
-    all_bkg_max = np.empty(len(bkg))
-    all_bkg_min = np.empty(len(bkg))
-
-    for i in range(len(bkg)):
-        all_bkg_max[i] = np.amax(bkg[i])
-        all_bkg_min[i] = np.amin(bkg[i])
-        
+    # If max and min aren't defined, find them
     if 'bkg_maxim' not in locals():
+        all_bkg_max = np.empty(len(bkg))
+        all_bkg_min = np.empty(len(bkg))
+        for i in range(len(bkg)):
+            all_bkg_max[i] = np.amax(bkg[i])
+            all_bkg_min[i] = np.amin(bkg[i])
         bkg_maxim = np.nanmax(all_bkg_max)
         bkg_minim = np.nanmin(all_bkg_min)
 
@@ -273,39 +314,43 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     bins_plot = np.delete(bins,Nb-1)
     bins_centre = bins_plot + (width/2)
     
-    # Define an area array for normalisation:
-    area = np.zeros(bkg_length)
+    # Define arrays for shaping:
+    bkg_count_sum = np.zeros(bkg_length)
+    sig_count_sum = np.zeros(sig_length)
     bkg_weight_sum = np.zeros(bkg_length)
     
-    # Define stackable counts and errors
+    # Define stackable counts and errors for multiple bkg
     stack_count = 0  
     final_error = 0
 
-    for i in range(bkg_length):
-        if bkg_test[i] == 1:
-            # Calculation of the max counts
-            count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i])
-            # Total area for each histogram
-            area[i] = np.sum(count * width)
-            bkg_weight_sum[i] = np.sum(weight[i])
-            
-    # Total area for all histograms
-    all_area = np.sum(area)
-    bkg_weight_tot = np.sum(bkg_weight_sum)
-            
+    ###################
+    # PLOT BACKGROUND #
+    ###################
+
+    # Preliminary for shape comparison
+    # Outside the main loop to avoid calculating sums multiple times
+    if shaped:
+        for i in range(bkg_length):
+            if bkg_test[i] == 1:
+                # Calculation of the counts
+                count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i])
+                # Total weights for each histogram
+                bkg_weight_sum[i] = np.sum(weight[i])
+                # Total count for each histogram
+                bkg_count_sum[i] = np.sum(count)
+                
+        # Total count for all bkg histograms
+        all_bkg_count = np.sum(bkg_count_sum)
+        # Total weight for all bkg histograms
+        bkg_weight_tot = np.sum(bkg_weight_sum)
+    
+    # Main bkg loop
     for i in range(bkg_length):
         if bkg_test[i] == 1:
             # Calculation of the counts
             count,edge = np.histogram(bkg[i], bins=bins, weights=weight[i])
 
-            if normed:
-                # Normalise all backgrounds to the sum of their weights
-                count = (count/all_area)*bkg_weight_tot
-                N =  ( np.sum(weight[i]) *(bins[-1]-bins[0]) ) / len(count)
-            else:
-                N = 1
-
-            # Save the other and ttZ counts for return
+            # Save the other and ttZ counts for return later
             if i == 0:
                 other_count = count
 
@@ -314,9 +359,9 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
                 
             # Calculate the error
             error = np.sqrt((np.histogram(bkg[i], bins=bins, 
-                                              weights=weight[i]*weight[i])[0]).astype(float) / N)
+                                              weights=weight[i]*weight[i])[0]).astype(float))
             
-            # Addition of all background errors
+            # Addition of all background errors in quadrature
             final_error = np.sqrt((final_error**2) + (error**2))
     
             # Make the plot
@@ -331,16 +376,22 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
             # Add the count to the stack for the next iteration
             stack_count = stack_count + count
             
-    for i in range(len(sig_test)):
-        if sig_test[i] == 1:
-            # Calculation of the counts
-            step_count,edge = np.histogram(sig[i], bins=bins, weights=weight[bkg_length+i],
-                                           density=normed)
+    ###############
+    # PLOT SIGNAL #
+    ###############
             
-            # Normalise to the sum of the weights if plot is normalised
-            if normed:
-                step_count = step_count*np.sum(weight[bkg_length+i])
-                
+    for i in range(sig_length):
+        if sig_test[i] == 1:
+
+            # Normalise to the background if shaped
+            if shaped:
+                step_count,edge = np.histogram(sig[i], bins=bins)
+                sig_count = np.sum(step_count)
+                step_count = step_count*(all_bkg_count/sig_count)
+            # Otherwise plot an event comparison
+            else:
+                step_count,edge = np.histogram(sig[i], bins=bins, weights=weight[bkg_length+i])
+         
             # Extend the step in x to reach the edge of the plot
             step_count_ext = np.append(step_count, step_count[len(step_count)-1])
             
@@ -349,13 +400,12 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
                      where='post', linewidth = 2.0, linestyle=linestyle[i])
             
             # Save the signal count for specific signal for return
-            # Needs to be changed to extract a given signal
+            #!!! Needs to be changed to extract a given signal
             if i == 4:
                 sigcount = step_count
     
     
     # Plot customisation
-    
     if ytitle_in == 'Events':
         # If a GeV plot use GeV bins and decimal format
         ytitle = ('Events' + " / {width:} GeV").format(width = int(width))
@@ -365,13 +415,14 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
         ytitle = ('Events' + " / {width:.3f} rad").format(width = width)
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     
-    if normed:
-        ytitle = ytitle + ' (Normalised)'
+    if shaped:
+        plt.title(title + ' - shape comparison', fontsize=40)
+    else:
+        plt.title(title + ' - event comparison', fontsize=40)
     
-    plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .9), framealpha=1, edgecolor='k')
+    plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     
     # Define ticks for numbering (major only) and grids (both)
     ax.set_xticks(major_ticks)
@@ -382,7 +433,7 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     ax.grid(which='major', axis='y', alpha = 0.5)
         
     # Rotate the x labels 45 degrees
-    #fig.autofmt_xdate(rotation=45)
+    # fig.autofmt_xdate(rotation=45)
         
     # Set axis font sizes
     plt.xticks(fontsize=20)
@@ -393,6 +444,7 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     
     # Set x limit 
     plt.xlim(bkg_minim, bkg_maxim)
+    
     # Set y limit, upper limit is automatic, non-zero for a log scale
     if scale == 'log':
         plt.gca().set_ylim(bottom=0.01)
@@ -400,14 +452,34 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
         plt.gca().set_ylim(bottom=0)
     
     # String for adding to the text box
+    # if shaped:
+    #     #string = '\n'.join(('ATLAS','$\u221As = 13 TeV, 36.1$ $fb^{-1}$','$m_H$ $=130 GeV,$ $n_b$ $= 2$'))
+    #     string = ('\u221As = 13 TeV, 139 $fb^{{-1}}$ \n Signal normalized to the background yield')
+    # else:
     string = ('$\u221As = 13 TeV, 139$ $fb^{-1}$')
     
     # Add a text box
-    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=10, fontweight='bold', horizontalalignment='right',
+    # fontweight='bold', 
+    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
-    # Save the figure, close if close is set true
-    plt.savefig("Plots/"+saveas+".png")
+    # Add an additional text box if in kwargs
+    if addText:
+        # ax.text(.97, .50, add_string, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+        #     verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
+        
+        # fig.text(.5, .05, add_string, ha='center')
+        # fig.set_size_inches(11, 10, forward=True)
+        
+        plt.figtext(0.5, 0.01, add_string, wrap=True, horizontalalignment='center', fontsize=8)
+    
+    # Save the figure to the relevant folder 
+    if shaped:
+        plt.savefig("Plots/Shapes/"+saveas+".png")
+    else:
+        plt.savefig("Plots/Events/"+saveas+".png")
+        
+    # Close if close is set true
     if close: 
         plt.close()
     else:
@@ -416,31 +488,308 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     # Return the counts, if required
     return ttZcount, sigcount
         
-# Alternative errorbars wrt axes
-# https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.errorbar.html
-# errorevery may be more suitable than erroroffset in future
-
-# ax.errorbar(bins_centre+err_offset[i], (count+stack_count), xerr=None, yerr=error, 
-#             ls='none', ecolor='err_color[i], fmt = 'k+')
         
 ###############################################################################
 
-# Stacked histograms with signal
-#!!! Change green description
+
 
 '''
-X - Histrogram array
-X1 - Signal array
-Nb - Number of bins for the histogram
-close - Whether to close the plot or not
-label - labels for histogram with signal label on the end
-
-kwargs - xtitle, ytitle, title, saveas
+Function to prepare x and y data for machine learning
 '''
-def SVMHist(y_binary, model_prob, Nb, weight, N_arr, close, label, **kwargs):
+
+def data_prep(variables, N_ttZ, N, signal_start, signal_end, cut_percentage=0):
+
+    #!!! Put N_arr into here? 
+    # Put some more comments in here
+    cut = 1-cut_percentage
+
+    sig_length = int((signal_end - signal_start)*cut)
+    
+    if isinstance(variables, tuple):
+        var_length = len(variables)
+        all_variables = np.zeros((N, var_length))
+    
+        for i in range(var_length):
+            all_variables[:,i] = variables[i]
+    else:
+        all_variables = variables
+        all_variables  = all_variables.reshape((len(all_variables),1)) 
+    
+    background = all_variables[0:N_ttZ]
+    signal = all_variables[signal_start:signal_end]
+    
+    signal = signal[0:sig_length]
+    
+    zeros = np.zeros((N_ttZ,1))
+    ones = np.ones((sig_length,1))
+    
+    xdata = np.concatenate((background,signal))
+    ydata = np.concatenate((zeros,ones))
+    
+    data = np.hstack((xdata,ydata))
+
+    # Shuffle the data
+    np.random.shuffle(data)
+
+    # Training and test splitting
+    N = data.shape[0]
+    N_train = int((0.5)*N)
+
+    # Separate into x and y
+    y_pos = len(data[0])-1
+    X = data[:,0:y_pos]
+    y_binary = data[:,y_pos]
+    
+    ### Normalisation ###
+    ###  Choose one   ###
+    
+    ### No Normalistation ###
+    # X_norm = X
+    
+    ###   Standard scalar  ###
+    scaler = StandardScaler()
+
+    ###   Scalar 0-1   ###
+    # Cheating a bit in scaling all of the data,
+    # instead of fitting the transformation on the training set and
+    # just applying it on the test set.
+    
+    # scaler = MinMaxScaler(feature_range=(0,1))
+    
+    scaler.fit(X)
+    X_norm = scaler.transform(X)
+
+    # Get train and test data
+    
+    X_train = X_norm[0:N_train,:]
+    y_train = y_binary[0:N_train]
+    
+    X_test = X_norm[N_train:,:]
+    y_test = y_binary[N_train:]
+    
+    ### Scalar actual ###
+    # X_train_sc = X[0:N_train,:]
+    # y_train = y_binary[0:N_train]
+    
+    # X_test_sc = X[N_train:,:]
+    # y_test = y_binary[N_train:]
+
+    # scaler = MinMaxScaler(feature_range=(0,1))
+
+    # X_train = scaler.fit_transform(X_train_sc)
+    # X_test = scaler.transform(X_test_sc)
+    
+    # X_norm = np.concatenate((X_train,X_test))
+
+    #Normalised dataset
+    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
+    data_norm = np.hstack((X_norm,y_binary_data))
+    
+    # Convert y to integer form
+    y_binary_int = y_binary.astype(int)
+    
+    # Return the data for visualisation, the training and test sample and the true binary
+    return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int, N_train
+
+def two_model_prep(variables, N_ttZ, N, signal_start, signal_end):
+
+    sig_length = int(signal_end - signal_start)
+    
+    if isinstance(variables, tuple):
+        var_length = len(variables)
+        all_variables = np.zeros((N, var_length))
+    
+        for i in range(var_length):
+            all_variables[:,i] = variables[i]
+    else:
+        all_variables = variables
+        all_variables  = all_variables.reshape((len(all_variables),1)) 
+    
+    background = all_variables[0:N_ttZ]
+    signal = all_variables[signal_start:signal_end]
+    
+    signal = signal[0:sig_length]
+    
+    zeros = np.zeros((N_ttZ,1))
+    ones = np.ones((sig_length,1))
+    
+    xdata = np.concatenate((background,signal))
+    ydata = np.concatenate((zeros,ones))
+    
+    data = np.hstack((xdata,ydata))
+
+    # Shuffle the data
+    np.random.shuffle(data)
+
+    # Split the data for two models
+    N = data.shape[0]
+    N_train = int((0.5)*N)
+
+    # Separate into x and y
+    y_pos = len(data[0])-1
+    X = data[:,0:y_pos]
+    y_binary = data[:,y_pos]
+    
+    ### Normalisation ###
+    ###  Choose one   ###
+    
+    ### No Normalistation ###
+    # X_norm = X
+    
+    ###   Standard scalar  ###
+    scaler = StandardScaler()
+
+    ###   Scalar 0-1   ###
+    # Cheating a bit in scaling all of the data,
+    # instead of fitting the transformation on the training set and
+    # just applying it on the test set.
+    
+    # scaler = MinMaxScaler(feature_range=(0,1))
+    
+    scaler.fit(X)
+    X_norm = scaler.transform(X)
+
+    # Get train and test data
+    
+    X_train = X_norm[0:N_train,:]
+    y_train = y_binary[0:N_train]
+    
+    X_test = X_norm[N_train:,:]
+    y_test = y_binary[N_train:]
+    
+    ### Scalar actual ###
+    # X_train_sc = X[0:N_train,:]
+    # y_train = y_binary[0:N_train]
+    
+    # X_test_sc = X[N_train:,:]
+    # y_test = y_binary[N_train:]
+
+    # scaler = MinMaxScaler(feature_range=(0,1))
+
+    # X_train = scaler.fit_transform(X_train_sc)
+    # X_test = scaler.transform(X_test_sc)
+    
+    # X_norm = np.concatenate((X_train,X_test))
+
+    #Normalised dataset
+    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
+    data_norm = np.hstack((X_norm,y_binary_data))
+    
+    # Convert y to integer form
+    y_binary_int = y_binary.astype(int)
+    
+    # Return the data for visualisation, the training and test sample and the true binary
+    return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int, N_train
+
+
+
+def ROC_Curve(y_binary, model_pred, close, title, saveas, **kwargs):
+    
+    addTextbool = False
+    
+    for i, j in kwargs.items():
+        if i=="addText":
+            addTextbool = True
+            addText = j
+    
+    length = len(model_pred)
+    N_train = int((2/3)*length)
+    
+    y_pred_all = model_pred
+
+    y_train = y_binary[0:N_train]
+    y_pred_train = y_pred_all[0:N_train]
+    
+    y_test = y_binary[N_train:length]
+    y_pred_test = y_pred_all[N_train:length]
+    
+    fpr_all, tpr_all, thresholds = metrics.roc_curve(y_binary, y_pred_all)
+    fpr_train, tpr_train, thresholds = metrics.roc_curve(y_train, y_pred_train)
+    fpr_test, tpr_test, thresholds = metrics.roc_curve(y_test, y_pred_test)
+    
+    auc_all = metrics.auc(fpr_all, tpr_all)
+    auc_train = metrics.auc(fpr_train, tpr_train)
+    auc_test = metrics.auc(fpr_test, tpr_test)
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
+    plt.plot(fpr_all, tpr_all, label='All (area = {:.3f})'.format(auc_all), color='red')
+    plt.plot(fpr_test, tpr_test, label='Test (area = {:.3f})'.format(auc_test), color='deepskyblue')
+    plt.plot(fpr_train, tpr_train, label='Train (area = {:.3f})'.format(auc_train), color='limegreen')
+    plt.xlabel('False positive rate', fontsize=25)
+    plt.ylabel('True positive rate', fontsize=25)
+    plt.title(title + ' ROC Curve', fontsize=40)
+    plt.legend(loc='best', fontsize=15)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    
+     # if there's additional text put it in a text box
+    if addTextbool:
+        ax.text(.55, .97, addText, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+        verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
+    
+    plt.show()
+    plt.savefig("Plots/"+saveas+"ROC"+".png")
+    
+    if close: 
+        plt.close()
+    else:
+        plt.show()
+        
+    return auc_test
+    
+    
+def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, shaped=True, **kwargs):
+    
+    # Train and test probabilities
+    model_prob_train = model_prob[:N_train,:]
+    model_prob_test = model_prob[N_train:,:]
+    
+    # Train and test y binaries
+    y_binary_train = y_binary[:N_train]
+    y_binary_test = y_binary[N_train:]
+    
+    ### Separate bkg and sig for each ###
+    
+    # All probability bkg and sig
+    model_prob_bkg = model_prob[y_binary==0]
+    model_prob_sig = model_prob[y_binary==1]
+    
+    # Train probability bkg and sig
+    model_prob_train_bkg = model_prob_train[y_binary_train==0]
+    model_prob_train_sig = model_prob_train[y_binary_train==1]
+    
+    # Test probability bkg and sig
+    model_prob_test_bkg = model_prob_test[y_binary_test==0]
+    model_prob_test_sig = model_prob_test[y_binary_test==1]
+    
+    ### Pack into tuples ###
+    bkg = (model_prob_bkg, model_prob_train_bkg, model_prob_test_bkg)
+    sig = (model_prob_sig, model_prob_train_sig, model_prob_test_sig)
+    
+    # Define an additional title and save term for each
+    add_term = ['all','train','test']
+    
+    ##############
+    # PLOT SETUP #
+    ##############
+
     global save_count
+    
+    # Calculate bins and widths
+    bins = np.linspace(0, 1, Nb)
+    width = bins[1]-bins[0]
+    
+    bins_plot = np.delete(bins,Nb-1)
+
+    # Take every other value of the bin for the major ticks
+    major_ticks = bins[::2]
+    
+    # Initialise addTextbool
+    addTextbool = False
+    
+    ###################
+    # DATA EXTRACTION #
+    ###################
     
     # Only need the ttZ background
     N_ttZ = N_arr[0]
@@ -462,13 +811,15 @@ def SVMHist(y_binary, model_prob, Nb, weight, N_arr, close, label, **kwargs):
             title = j
         elif i=="saveas":
             saveas = j
+        elif i=="addText":
+            addTextbool = True
+            addText = j
 
     # Extract the ttZ weight
     ttZ_weight = (weight[0:N_ttZ])[0]
 
-
     # Extract the signal weights based on the label
-    # Take the first value since they're all the same per signal
+    # Just take the first value since they're all the same per signal
 
     if label[1] == 'ggA_460_360':
         sig_weight = (weight[N_ttWp:N_ggA_460_360])[0]
@@ -487,9 +838,6 @@ def SVMHist(y_binary, model_prob, Nb, weight, N_arr, close, label, **kwargs):
         
     elif label[1] == 'ggA_500_400':
         sig_weight = (weight[N_ggA_600_500:N_ggA_500_400])[0]
-        
-    
-
 
     color = ['cyan','red']
     
@@ -499,229 +847,170 @@ def SVMHist(y_binary, model_prob, Nb, weight, N_arr, close, label, **kwargs):
         save_count = save_count+1
         print('Warning, some plots have no save title')
         
-    # Calculate bins and widths
-    bins = np.linspace(0, 1, Nb)
-    width = bins[1]-bins[0]
-    
-    bins_plot = np.delete(bins,Nb-1)
-
-    # Take every other value of the bin for the major ticks
-    major_ticks = bins[::2]
+    for i in range(3):
         
-    # The predicted probability of signal for background events
-    X = model_prob[y_binary==0]
-    # The predicted probability of signal for signal events
-    X1 = model_prob[y_binary==1]
-    
-    # Plot background histogram
+        fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
+        
+        ###################
+        # PLOT BACKGROUND #
+        ###################
 
-    count,edge = np.histogram(X, bins=bins)
+        # Calculate counts
+        count,edge = np.histogram(bkg[i], bins=bins)
+        
+        # Apply the weight
+        count = count*ttZ_weight
+        
+        # Calculate the sum for shape comparison with signal
+        if shaped:
+            bkg_count_sum =np.sum(count)
+        
+        # Make plot
+        plt.bar(bins_plot, count, label=label[0], width = width, align='edge', color=color[0])
     
-    # Apply the weight
-    count = count*ttZ_weight
+        ###############
+        # PLOT SIGNAL #
+        ###############
+        
+        # Calculate counts
+        step_count,edge = np.histogram(sig[i], bins=bins)
+        
+        # Apply the weight, not needed for shape comparison
+        step_count = step_count*sig_weight
+        
+        # Calculate the sum for shape comparison with signal
+        if shaped:
+            sig_count_sum =np.sum(step_count)
+        
+            # Apply shape comparison (equate integrals)
+            step_count = step_count*(bkg_count_sum/sig_count_sum)
+        
+        # Make plot
+        step_count_ext = np.append(step_count, step_count[len(step_count)-1])
+        plt.step(bins, step_count_ext, label=label[1], color=color[1], where='post', 
+                 linewidth = 2.0, linestyle='dashed')
+        
+        ######################
+        # PLOT CUSTOMISATION #
+        ######################
+        
+        # Titles and legend
+        plt.title(title+add_term[i], fontsize=40)
+        plt.xlabel(xtitle, fontsize=25)
+        plt.ylabel(ytitle, fontsize=25)
+        plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
+        
+        # Limit 0-1 for probability
+        plt.xlim(0, 1)
+        
+        # Define ticks for numbering (major only) and grids (both)
+        ax.set_xticks(major_ticks)
+        ax.set_xticks(bins, minor=True)
+        
+        # Add axes grids to x and y
+        ax.grid(which='both', axis='x', alpha = 0.5)
+        ax.grid(which='major', axis='y', alpha = 0.5)
+        
+        # Set tick fontsize and yscale
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        #plt.yscale('log')
+        
+        # if there's additional text put it in a text box
+        if addTextbool:
+            ax.text(.55, .97, addText, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+            verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
-    plt.bar(bins_plot, count, label=label[0], width = width, align='edge', color=color[0])
+        # Save the figure
+        if shaped:
+            plt.savefig("Plots/"+saveas+add_term[i]+".png")
+        else:
+            plt.savefig("Plots/"+saveas+'Event_'+add_term[i]+".png")
     
-    # Plot the signal
-    step_count,edge = np.histogram(X1, bins=bins)
+        # Close plots if close is set true
+        if close: 
+            plt.close()
+        else:
+            plt.show()
+        
+    return count, step_count
     
-    # Apply the weight
-    step_count = step_count*sig_weight
     
-    step_count_ext = np.append(step_count, step_count[len(step_count)-1])
-    plt.step(bins, step_count_ext, label=label[1], color=color[1], where='post', 
-             linewidth = 2.0, linestyle='dashed')
     
-    # Plot customisation
-    plt.title(title, fontsize=40)
-    plt.xlabel(xtitle, fontsize=25)
-    plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
-    plt.xlim(0, 1)
-    
-    # Define ticks for numbering (major only) and grids (both)
-    ax.set_xticks(major_ticks)
-    ax.set_xticks(bins, minor=True)
-    
-    # Add axes grids to x and y
-    ax.grid(which='both', axis='x', alpha = 0.5)
-    ax.grid(which='major', axis='y', alpha = 0.5)
-    
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.yscale('log')
+'''LIMIT CALCULATION'''
 
-    # Save the figure, close if close is set true
-    plt.savefig("Plots/"+saveas+".png")
+def LimitCount(y_binary, model_prob, Nb, weight, N_arr, label, xlim):
     
-    if close: 
-        plt.close()
-    else:
-        plt.show()
+    # Separate bkg and sig
+    bkg = model_prob[y_binary==0]
+    sig = model_prob[y_binary==1]
+    
+    ##############
+    # PLOT SETUP #
+    ##############
+    
+    # Calculate bins and widths
+    bins = np.linspace(xlim[0], xlim[1], Nb)
+    
+    ###################
+    # DATA EXTRACTION #
+    ###################
+    
+    # Only need the ttZ background
+    N_ttZ = N_arr[0]
+    N_ttWp = N_arr[2]
+    N_ggA_460_360 = N_arr[3]
+    N_ggA_500_360 = N_arr[4]
+    N_ggA_600_360 = N_arr[5]
+    N_ggA_600_400 = N_arr[6]
+    N_ggA_600_500 = N_arr[7]
+    N_ggA_500_400 = N_arr[8]
+
+    # Extract the ttZ weight
+    ttZ_weight = (weight[0:N_ttZ])[0]
+
+    # Extract the signal weights based on the label
+    # Just take the first value since they're all the same per signal
+
+    if label[1] == 'ggA_460_360':
+        sig_weight = (weight[N_ttWp:N_ggA_460_360])[0]
+
+    elif label[1] == 'ggA_500_360':
+        sig_weight = (weight[N_ggA_460_360:N_ggA_500_360] )[0]
+        
+    elif label[1] == 'ggA_600_360':
+        sig_weight = (weight[N_ggA_500_360:N_ggA_600_360])[0]
+
+    elif label[1] == 'ggA_600_400':
+        sig_weight = (weight[N_ggA_600_360:N_ggA_600_400] )[0]
+        
+    elif label[1] == 'ggA_600_500':
+        sig_weight = (weight[N_ggA_600_400:N_ggA_600_500])[0]
+        
+    elif label[1] == 'ggA_500_400':
+        sig_weight = (weight[N_ggA_600_500:N_ggA_500_400])[0]
+
+    # Adjust the weights to 300 (fb)^-1
+    ttZ_weight = ttZ_weight*(300/139)
+    sig_weight = sig_weight*(300/139)
+
+    ###################
+    # PLOT BACKGROUND #
+    ###################
+    
+    # Calculate counts
+    count,edge = np.histogram(bkg, bins=bins, weights=ttZ_weight)
+    
+    ###############
+    # PLOT SIGNAL #
+    ###############
+    
+    # Calculate counts
+    step_count,edge = np.histogram(sig, bins=bins, weights=sig_weight)
         
     return count, step_count
 
-# IN CASE I WANT TO PLOT THEM ON THE SAME PLOT, FOR MAIN
 
-# model_1_probs = (model_1_prob_train,model_1_prob_test)
-
-# model_test = type(model_1_probs) is tuple
-
-# model_all_test = type(model_1_all_prob) is tuple
-
-# print(model_test)
-# print(model_all_test)
-
-
-
-# OLD SEPARATION
-# plot = np.zeros(len(y_binary))
-# z = 0
-
-# for i in range(len(y_binary)-1):
-#     if y_binary[i] == 0:
-#         plot[z] = model_prob[i]
-#         z = z + 1
-        
-# mid_count = z
-        
-# for i in range(len(y_binary)-1):
-#     if y_binary[i] == 1:
-#         plot[z] = model_prob[i]
-#         z = z + 1
-
-
-'''
-Function to prepare x and y data for machine learning
-'''
-def data_prep(variables, N_ttZ, N, signal_start, signal_end):
-
-    #!!! Put N_arr into here    
-
-    sig_length = signal_end - signal_start
-    
-    if len(variables) < 100:
-        var_length = len(variables)
-        all_variables = np.zeros((N, var_length))
-    
-        for i in range(var_length):
-            all_variables[:,i] = variables[i]
-    else:
-        all_variables = variables
-        all_variables  = all_variables.reshape((len(all_variables),1)) 
-    
-    background = all_variables[0:N_ttZ]
-    signal = all_variables[signal_start:signal_end]
-    
-    zeros = np.zeros((N_ttZ,1))
-    ones = np.ones((sig_length,1))
-    
-    xdata = np.concatenate((background,signal))
-    ydata = np.concatenate((zeros,ones))
-    
-    data = np.hstack((xdata,ydata))
-
-    # Shuffle the data
-    np.random.shuffle(data)
-
-    # Training and test splitting
-    N = data.shape[0]
-    N_train = int(2*N/3)
-
-    # Separate into x and y
-    y_pos = len(data[0])-1
-    X = data[:,0:y_pos]
-    y_binary = data[:,y_pos]
-    
-    ### Normalisation ###
-    ###  Choose one   ###
-    
-    ### No Normalistation ###
-    # X_norm = X
-    
-    ###   Standard scalar  ###
-    # scaler = StandardScaler()
-    # scaler.fit(X)
-    # X_norm = scaler.transform(X)
-
-    ###   Scalar 0-1   ###
-    scaler = MinMaxScaler(feature_range=(0,1))
-    scaler.fit(X)
-    X_norm = scaler.transform(X)
-
-    # Get train and test data
-    
-    X_train = X_norm[0:N_train,:]
-    y_train = y_binary[0:N_train]
-    
-    X_test = X_norm[N_train:,:]
-    y_test = y_binary[N_train:]
-
-    
-    # TESTING
-    # X_train = X[0:N_train,:]
-    # y_train = y_binary[0:N_train]
-    
-    # X_test = X[N_train:,:]
-    # y_test = y_binary[N_train:]
-
-    # scaler = MinMaxScaler(feature_range=(0,1))
-
-    # X_train_sc = scaler.fit_transform(X_train)
-    # X_test_sc = scaler.transform(X_test)
-    
-    # X_norm = np.concatenate((X_train_sc,X_test_sc))
-
-    #Normalised dataset
-    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
-    data_norm = np.hstack((X_norm,y_binary_data))
-    
-    # Convert y to integer form
-    y_binary_int = y_binary.astype(int)
-    
-    # Return the data for visualisation, the training and test sample and the true binary
-    return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int
-    
-def ROC_Curve(y_binary, model_pred, close, tag):
-    
-    length = len(model_pred)
-    N_train = int(2*length/3)
-    
-    y_pred_all = model_pred
-
-    y_train = y_binary[0:N_train]
-    y_pred_train = y_pred_all[0:N_train]
-    
-    y_test = y_binary[N_train:length]
-    y_pred_test = y_pred_all[N_train:length]
-    
-    fpr_all, tpr_all, thresholds = metrics.roc_curve(y_binary, y_pred_all)
-    fpr_train, tpr_train, thresholds = metrics.roc_curve(y_train, y_pred_train)
-    fpr_test, tpr_test, thresholds = metrics.roc_curve(y_test, y_pred_test)
-    
-    auc_all = metrics.auc(fpr_all, tpr_all)
-    auc_train = metrics.auc(fpr_train, tpr_train)
-    auc_test = metrics.auc(fpr_test, tpr_test)
-    
-    plt.figure(figsize=(10.0,8.0))
-    plt.plot(fpr_all, tpr_all, label='All (area = {:.3f})'.format(auc_all), color='red')
-    plt.plot(fpr_test, tpr_test, label='Test (area = {:.3f})'.format(auc_test), color='deepskyblue')
-    plt.plot(fpr_train, tpr_train, label='Train (area = {:.3f})'.format(auc_train), color='limegreen')
-    plt.xlabel('False positive rate', fontsize=25)
-    plt.ylabel('True positive rate', fontsize=25)
-    plt.title('ROC_Curve_Model_'+tag, fontsize=40)
-    plt.legend(loc='best', fontsize=15)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.show()
-    plt.savefig("Plots/ROC_Curve_Model_"+tag+".png")
-    
-    if close: 
-        plt.close()
-    else:
-        plt.show()
-    
-'''LIMIT CALCULATION'''
     
 def calcSign(ns, nb, method=0, err=0.05):
     if method==0:
@@ -758,7 +1047,7 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
         i = N - j - 1
         ns += hsig[i]
         nb += hbkg[i]
-        if nb >= 3:
+        if nb >= 2:
             #sign = ns/sqrt(nb)
             sign = calcSign(ns, nb, method, err)
             res += sign*sign
@@ -776,73 +1065,5 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
     
     return lim
     
-'Old make plot function for NN'
-def makePlot(X1,X2, tag, Nb, close, **kwargs):
 
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(10.0,8.0))
 
-    xtitle=tag
-    title = tag
-    for key, value in kwargs.items():
-        if key == "xtitle":
-            xtitle = value
-        elif key=="title":
-            title = value
-
-    #Definition of variables
-    themin = min( [min(X1), min(X2)])
-    themax = max( [max(X1), max(X2)])
-    bins = np.linspace(themin, themax, Nb)
-    width = np.zeros(len(bins)-1)
-    
-    #Calculate bin centres and widths
-    bincentre = np.zeros(len(bins)-1)
-    for i in range(len(bins)-1):
-            bincentre[i] = bins[i]+((bins[i+1]-bins[i])/2)
-            width[i] = bins[i+1]-bins[i]
-
-    #Offset the errorbars for background and signal from the centre so they don't overlap
-    err_offset = 0.1*width
-    
-    #Set axis scale
-    #ax.set_yscale('log')
-    
-    #Implement hatches for errors?
-    #https://het.as.utexas.edu/HET/Software/Matplotlib/api/patches_api.html#matplotlib.patches.Patch.set_hatch
-    
-    
-    #Background plot
-    plt.hist(X1, bins=bins, label=['Background'],density=True)
-    n_back_pos, edge = np.histogram(X1, bins=Nb-1, range=(themin,themax),density=True)
-    n_back_count, edge1 = np.histogram(X1, bins=Nb-1, range=(themin,themax))
-    back_err = np.sqrt(n_back_count)/(np.sum(n_back_count)*width)
-    ax.errorbar(bincentre-err_offset, n_back_pos, xerr=None, yerr=back_err, ls='none', ecolor='k', fmt = 'ko')
-    
-    
-    #Signal plot
-    plt.hist(X2, bins=bins, label=['Signal'], histtype=u'step',density=True)
-    n_sig_pos, edge2 = np.histogram(X2, bins=Nb-1, range=(themin,themax),density=True)
-    n_sig_count, edge3 = np.histogram(X2, bins=Nb-1, range=(themin,themax))
-    sig_err = np.sqrt(n_sig_count)/(np.sum(n_sig_count)*width)
-    ax.errorbar(bincentre+err_offset, n_sig_pos, xerr=None, yerr=sig_err, ls='none', ecolor='r', fmt = 'ro')
-
-    #Calculate maximum value for y
-    ymax = max([(max(n_back_pos)+max(back_err)), (max(n_sig_pos)+max(sig_err))])
-
-    plt.title(title, fontsize=40)
-    plt.xlabel(xtitle, fontsize=25)
-    plt.ylabel("Entries (Norm)", fontsize=25)
-    plt.legend(loc='upper right')
-    plt.xlim(themin, themax)
-    plt.ylim(0, 1.2*ymax)
-    ax.set_xticks(bins, minor=True)
-    ax.grid(which='minor', axis='x', alpha = 0.5)
-    ax.grid(which='major', axis='y', alpha = 0.5)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.savefig("Plots/"+tag+".png")
-
-    if close: 
-        plt.close()
-    else:
-        plt.show()
