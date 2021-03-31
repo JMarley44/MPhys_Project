@@ -8,6 +8,7 @@ Created on Mon Feb  8 13:50:38 2021
 'Support vector machine program'
 from sklearn import svm
 from joblib import dump, load
+import numpy as np
 
 # SVM Classifiers offer good accuracy and perform faster prediction compared to Naïve Bayes algorithm. 
 # They also use less memory because they use a subset of training points in the decision phase. 
@@ -55,6 +56,69 @@ def SVM(X_train, y_train, X_test, C, gamma, tol, tag, ForceModel):
 
     
     return sig_prob_train, sig_prob_test #, bkg_prob_train, bkg_prob_test
+
+def SVM_opt(X_train, y_train, X_test, y_test, weight, N_arr, C, gamma, tol, tag):    
+
+    import Functions as f    
+
+    try:
+        C_len = len(C)
+    except:
+        C_len = 1
+        C = np.array([C])
+    
+    try:
+        gamma_len = len(gamma)
+    except:
+        gamma_len = 1
+        gamma = np.array([gamma])
+        
+    try:
+        tol_len = len(tol)
+    except:
+        tol_len = 1
+        tol = np.array([tol])
+
+    all_length = C_len*gamma_len*tol_len
+    counter = 0
+    
+    for i in range(C_len):
+        for j in range(gamma_len):
+            for k in range(tol_len):
+                print('**************')
+                print('Opt. run: ' + str(counter+1) + ' / ' + str(all_length))
+                print('**************')   
+                
+                # Define a blank model
+                clf = None
+            
+                # The model
+                clf = svm.SVC(C = C[i], gamma=gamma[j], kernel='rbf', probability=True, cache_size=1000, 
+                              tol = tol[k], break_ties=True, decision_function_shape = 'ovr') # Cache_size is memory usage
+                
+                clf.fit(X_train, y_train)
+                prob_train = clf.predict_proba(X_train)
+                prob_test = clf.predict_proba(X_test)
+                
+                # Return the probability of a signal for training and test data
+                sig_prob_train = prob_train[:,1]
+                sig_prob_test = prob_test[:,1]
+            
+                
+                f.ROC_Curve(sig_prob_train, sig_prob_test, y_train, y_test, close=True, 
+                            
+                            title='SVM_'+ tag +'_C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_', 
+                            
+                            saveas='SVM/'+ tag +'/Optimisation/C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_')
+                
+                f.ProbHist(sig_prob_train, sig_prob_test, y_train, y_test, 21, weight, N_arr, close=True, 
+                      label=['ttZ',('ggA_'+ tag)], xtitle='Probability of signal', ytitle='Events', 
+                        
+                      title='SVM_'+ tag +'_C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_', 
+                      
+                      saveas='SVM/'+ tag +'/Optimisation/C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_')
+                
+                counter=counter+1
 
 
 

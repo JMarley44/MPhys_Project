@@ -45,6 +45,7 @@ def DataSplit(dataset_full):
     N_ggA_600_400 = 0
     N_ggA_600_500 = 0
     N_ggA_500_400 = 0
+    N_ggA_500_400_1 = 0
     
     for i in range(len(dataset_full)):
         
@@ -75,7 +76,10 @@ def DataSplit(dataset_full):
         elif (dataset_full[i,0]=='ggA_500_400'):
             N_ggA_500_400 = N_ggA_500_400 + 1
             
-        
+        elif (dataset_full[i,0]=='ggAZH_hadp_comb_production_500_400' or dataset_full[i,0]=='ggAZH_hadm_comb_production_500_400'):
+            N_ggA_500_400_1 = N_ggA_500_400_1 + 1
+            
+    # Stack the counts in order of appearance
     N_ttWm = N_ttWm + N_ttZ
     N_ttWp = N_ttWp + N_ttWm
     N_ggA_460_360 = N_ggA_460_360 + N_ttWp
@@ -84,9 +88,10 @@ def DataSplit(dataset_full):
     N_ggA_600_400 = N_ggA_600_400 + N_ggA_600_360
     N_ggA_600_500 = N_ggA_600_500 + N_ggA_600_400
     N_ggA_500_400 = N_ggA_500_400 + N_ggA_600_500
+    N_ggA_500_400_1 = N_ggA_500_400_1 + N_ggA_500_400
     
     
-    return N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_ggA_600_500,N_ggA_500_400
+    return N_ttZ,N_ttWm,N_ttWp,N_ggA_460_360,N_ggA_500_360,N_ggA_600_360,N_ggA_600_400,N_ggA_600_500,N_ggA_500_400,N_ggA_500_400_1
 
 
     

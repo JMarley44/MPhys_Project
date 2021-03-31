@@ -88,7 +88,7 @@ def drangle(dphi, eta1, eta2):
     
     return drangle
 
-# Single histogram plot for the Z invariant #!!! Needs error bars?
+# Single histogram plot for the Z invariant #!!! Needs error bars and luminosity scaling
 def Hist(X, Nb, close, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     
@@ -117,14 +117,27 @@ def Hist(X, Nb, close, **kwargs):
     if 'scale' not in locals():
         scale = 'linear'
 
-    # Calculate the bins
+    # Calculate the bins and width
     bins = np.linspace(themin, themax, Nb)
+    width = bins[1]-bins[0]
     
-    # Take every other value of the bin for the major ticks
+    # Take every other value of the bin for the major tick labels
     major_ticks = bins[::2]
+
+    # Bin centres
+    bins_plot = np.delete(bins,Nb-1)
+    bins_centre = bins_plot + (width/2)
+
+    # Make the histogram
+    count,edge = np.histogram(X, bins=bins)
 
     # Plot the histogram
     plt.hist(X, bins=bins)
+    
+    # Add error bars
+    error = np.sqrt(count)
+    plt.errorbar(bins_centre, count, barsabove=True, ls='none', 
+                              yerr=error, marker='+', color='red')
 
     # Plot customisation
     plt.title(title, fontsize=40)
@@ -143,7 +156,7 @@ def Hist(X, Nb, close, **kwargs):
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.yscale(scale)
-    plt.savefig("Plots/"+title+".png")
+    plt.savefig("Plots/Singular/"+title+".png")
     
     if close: 
         plt.close()
@@ -179,15 +192,16 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     N_ggA_600_400 = N_arr[6]
     N_ggA_600_500 = N_arr[7]
     N_ggA_500_400 = N_arr[8]
+    N_ggA_500_400_1 = N_arr[9]
     
     label = [r'other',r't$\bar{t}$Z','ggA ($m_A$=460, $m_H$=360)', 'ggA ($m_A$=500, $m_H$=360)', 'ggA ($m_A$=600, $m_H$=360)'
-         , 'ggA ($m_A$=600, $m_H$=400)', 'ggA ($m_A$=600, $m_H$=500)', 'ggA ($m_A$=500, $m_H$=400)']
+         , 'ggA ($m_A$=600, $m_H$=400)', 'ggA ($m_A$=600, $m_H$=500)', 'ggA ($m_A$=500, $m_H$=400)','ggA ($m_A$=500, $m_H$=400) 1']
     
-    color = ['lightgreen','cyan','cornflowerblue','red','indigo','gold','black','maroon']
+    color = ['lightgreen','cyan','cornflowerblue','red','indigo','gold','black','maroon','darkorange']
     
     # Test whether a given bkg/sig is present
     bkg_test = np.zeros(2) # other, ttZ
-    sig_test = np.zeros(6) # 460_360, 500_360, 600_360, 600_400, 600_500, 500_400
+    sig_test = np.zeros(7) # 460_360, 500_360, 600_360, 600_400, 600_500, 500_400, 500_400_1
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     global save_count
@@ -205,12 +219,14 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     X_600_400 = None 
     X_600_500 = None 
     X_500_400 = None
+    X_500_400_1 = None
     weight_460_360 = None
     weight_500_360 = None
     weight_600_360 = None
     weight_600_400 = None
     weight_600_500 = None
     weight_500_400 = None
+    weight_500_400_1 = None
     
     shaped = False
     addText = False
@@ -272,6 +288,10 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
                     X_500_400 = X[N_ggA_600_500:N_ggA_500_400]
                     weight_500_400 = weight[N_ggA_600_500:N_ggA_500_400]
                     sig_test[5] = 1
+                elif j[k] == '500_400_1':
+                    X_500_400_1 = X[N_ggA_500_400:N_ggA_500_400_1]
+                    weight_500_400_1 = weight[N_ggA_500_400:N_ggA_500_400_1]
+                    sig_test[6] = 1
                 else:
                     print('Unknown bkg/sig in SignalHist')
 
@@ -286,8 +306,9 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
             
     # Form tuples
     bkg = ([X_other, X_ttZ])
-    sig = ([X_460_360, X_500_360, X_600_360, X_600_400, X_600_500, X_500_400])
-    weight = ([weight_other, weight_ttZ, weight_460_360, weight_500_360,weight_600_360,weight_600_400,weight_600_500 ,weight_500_400])
+    sig = ([X_460_360, X_500_360, X_600_360, X_600_400, X_600_500, X_500_400, X_500_400_1])
+    weight = ([weight_other, weight_ttZ, weight_460_360, weight_500_360,weight_600_360,
+               weight_600_400, weight_600_500, weight_500_400, weight_500_400_1])
     
     # Lengths of data
     bkg_length = len(bkg)
@@ -401,7 +422,7 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
             
             # Save the signal count for specific signal for return
             #!!! Needs to be changed to extract a given signal
-            if i == 4:
+            if i == 2:
                 sigcount = step_count
     
     
@@ -410,10 +431,12 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
         # If a GeV plot use GeV bins and decimal format
         ytitle = ('Events' + " / {width:} GeV").format(width = int(width))
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.d'))
+        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     else:
         # If a rad plot use rad bins and float format
         ytitle = ('Events' + " / {width:.3f} rad").format(width = width)
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     
     if shaped:
         plt.title(title + ' - shape comparison', fontsize=40)
@@ -422,7 +445,6 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
     
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     
     # Define ticks for numbering (major only) and grids (both)
     ax.set_xticks(major_ticks)
@@ -497,14 +519,15 @@ def SignalHist(X, weight, Nb, N_arr, close, **kwargs):
 Function to prepare x and y data for machine learning
 '''
 
-def data_prep(variables, N_ttZ, N, signal_start, signal_end, cut_percentage=0):
-
-    #!!! Put N_arr into here? 
-    # Put some more comments in here
+def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, cut_percentage=0):
+    
+    # Cut some of the signal data to show whether or not the # of events is sufficient
     cut = 1-cut_percentage
 
     sig_length = int((signal_end - signal_start)*cut)
     
+    # Test if the input discriminant is singular or packed into a tuple
+    # Assign it to the 'all_variables' variable
     if isinstance(variables, tuple):
         var_length = len(variables)
         all_variables = np.zeros((N, var_length))
@@ -513,27 +536,71 @@ def data_prep(variables, N_ttZ, N, signal_start, signal_end, cut_percentage=0):
             all_variables[:,i] = variables[i]
     else:
         all_variables = variables
-        all_variables  = all_variables.reshape((len(all_variables),1)) 
+        all_variables = all_variables.reshape((len(all_variables),1)) 
     
+    # Split to bkg and sig
     background = all_variables[0:N_ttZ]
     signal = all_variables[signal_start:signal_end]
     
+    bkg_w = weight[0:N_ttZ]
+    sig_w = weight[signal_start:signal_end]
+    
+    # Normalise the weights
+    # Just use float64 and round later to manage float point err
+    mean_bkg_w = np.mean(bkg_w, dtype=np.float64)
+    mean_sig_w = np.mean(sig_w, dtype=np.float64)
+    
+    bkg_w_norm = (bkg_w/mean_bkg_w).astype('float32')
+    sig_w_norm = (sig_w/mean_sig_w).astype('float32')
+    
+    # Perform the cut if it has value
     signal = signal[0:sig_length]
     
+    # Assign the background value 0 and the signal value 1
     zeros = np.zeros((N_ttZ,1))
     ones = np.ones((sig_length,1))
     
+    # Combine backgrounds and signals
     xdata = np.concatenate((background,signal))
     ydata = np.concatenate((zeros,ones))
+    wdata = np.concatenate((bkg_w,sig_w))
+    w_norm_data = np.concatenate((bkg_w_norm,sig_w_norm))
     
-    data = np.hstack((xdata,ydata))
+    # Reshape the w data for merging
+    wdata = wdata.reshape((len(wdata),1)) 
+    w_norm_data = w_norm_data.reshape((len(w_norm_data),1)) 
+    
+    # Add y and weights to the data for shuffling together
+    data = np.append(xdata,ydata, axis=1)
+    data = np.append(data,wdata, axis=1)
+    data = np.append(data,w_norm_data, axis=1)
 
     # Shuffle the data
     np.random.shuffle(data)
 
-    # Training and test splitting
-    N = data.shape[0]
-    N_train = int((0.5)*N)
+    # Define training and test splitting
+    N_data = data.shape[0]
+    N_train = int((0.7)*N_data)
+
+    # Separate the normalised weights out
+    w_norm_pos = len(data[0])-1
+    w_norm_shuff = data[:,w_norm_pos]
+    
+    w_norm_train = w_norm_shuff[0:N_train]
+    w_norm_test = w_norm_shuff[N_train:]
+
+    # Remove the normalised weights from the data
+    data = np.delete(data,w_norm_pos, axis=1)
+
+    # Separate the weights out
+    w_pos = len(data[0])-1
+    w_shuff = data[:,w_pos]
+    
+    w_train = w_shuff[0:N_train]
+    w_test = w_shuff[N_train:]
+    
+    # Remove the weights from the data
+    data = np.delete(data,w_pos, axis=1)
 
     # Separate into x and y
     y_pos = len(data[0])-1
@@ -589,102 +656,10 @@ def data_prep(variables, N_ttZ, N, signal_start, signal_end, cut_percentage=0):
     y_binary_int = y_binary.astype(int)
     
     # Return the data for visualisation, the training and test sample and the true binary
-    return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int, N_train
+    return data, data_norm, X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, y_binary_int, N_train
 
-def two_model_prep(variables, N_ttZ, N, signal_start, signal_end):
-
-    sig_length = int(signal_end - signal_start)
     
-    if isinstance(variables, tuple):
-        var_length = len(variables)
-        all_variables = np.zeros((N, var_length))
-    
-        for i in range(var_length):
-            all_variables[:,i] = variables[i]
-    else:
-        all_variables = variables
-        all_variables  = all_variables.reshape((len(all_variables),1)) 
-    
-    background = all_variables[0:N_ttZ]
-    signal = all_variables[signal_start:signal_end]
-    
-    signal = signal[0:sig_length]
-    
-    zeros = np.zeros((N_ttZ,1))
-    ones = np.ones((sig_length,1))
-    
-    xdata = np.concatenate((background,signal))
-    ydata = np.concatenate((zeros,ones))
-    
-    data = np.hstack((xdata,ydata))
-
-    # Shuffle the data
-    np.random.shuffle(data)
-
-    # Split the data for two models
-    N = data.shape[0]
-    N_train = int((0.5)*N)
-
-    # Separate into x and y
-    y_pos = len(data[0])-1
-    X = data[:,0:y_pos]
-    y_binary = data[:,y_pos]
-    
-    ### Normalisation ###
-    ###  Choose one   ###
-    
-    ### No Normalistation ###
-    # X_norm = X
-    
-    ###   Standard scalar  ###
-    scaler = StandardScaler()
-
-    ###   Scalar 0-1   ###
-    # Cheating a bit in scaling all of the data,
-    # instead of fitting the transformation on the training set and
-    # just applying it on the test set.
-    
-    # scaler = MinMaxScaler(feature_range=(0,1))
-    
-    scaler.fit(X)
-    X_norm = scaler.transform(X)
-
-    # Get train and test data
-    
-    X_train = X_norm[0:N_train,:]
-    y_train = y_binary[0:N_train]
-    
-    X_test = X_norm[N_train:,:]
-    y_test = y_binary[N_train:]
-    
-    ### Scalar actual ###
-    # X_train_sc = X[0:N_train,:]
-    # y_train = y_binary[0:N_train]
-    
-    # X_test_sc = X[N_train:,:]
-    # y_test = y_binary[N_train:]
-
-    # scaler = MinMaxScaler(feature_range=(0,1))
-
-    # X_train = scaler.fit_transform(X_train_sc)
-    # X_test = scaler.transform(X_test_sc)
-    
-    # X_norm = np.concatenate((X_train,X_test))
-
-    #Normalised dataset
-    y_binary_data  = y_binary.reshape((len(y_binary),1)) 
-    data_norm = np.hstack((X_norm,y_binary_data))
-    
-    # Convert y to integer form
-    y_binary_int = y_binary.astype(int)
-    
-    # Return the data for visualisation, the training and test sample and the true binary
-    return data, data_norm, X_train, y_train, X_test, y_test, y_binary_int, N_train
-
-
-
-def ROC_Curve(y_binary, model_pred, close, title, saveas, **kwargs):
-    
+def ROC_Curve(pred_train, pred_test, y_train, y_test, close, title, saveas, **kwargs):
     addTextbool = False
     
     for i, j in kwargs.items():
@@ -692,20 +667,16 @@ def ROC_Curve(y_binary, model_pred, close, title, saveas, **kwargs):
             addTextbool = True
             addText = j
     
-    length = len(model_pred)
-    N_train = int((2/3)*length)
+    pred_all = np.concatenate([pred_train,pred_test])
+    y_all = np.concatenate([y_train,y_test])
     
-    y_pred_all = model_pred
-
-    y_train = y_binary[0:N_train]
-    y_pred_train = y_pred_all[0:N_train]
+    y_all = np.asarray(y_all).astype('int')
+    y_train = np.asarray(y_train).astype('int')
+    y_test = np.asarray(y_test).astype('int')
     
-    y_test = y_binary[N_train:length]
-    y_pred_test = y_pred_all[N_train:length]
-    
-    fpr_all, tpr_all, thresholds = metrics.roc_curve(y_binary, y_pred_all)
-    fpr_train, tpr_train, thresholds = metrics.roc_curve(y_train, y_pred_train)
-    fpr_test, tpr_test, thresholds = metrics.roc_curve(y_test, y_pred_test)
+    fpr_all, tpr_all, thresholds = metrics.roc_curve(y_all, pred_all)
+    fpr_train, tpr_train, thresholds = metrics.roc_curve(y_train, pred_train)
+    fpr_test, tpr_test, thresholds = metrics.roc_curve(y_test, pred_test)
     
     auc_all = metrics.auc(fpr_all, tpr_all)
     auc_train = metrics.auc(fpr_train, tpr_train)
@@ -737,34 +708,45 @@ def ROC_Curve(y_binary, model_pred, close, title, saveas, **kwargs):
         
     return auc_test
     
+
+def ProbHist(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, close, label, shaped=True, **kwargs):
     
-def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, shaped=True, **kwargs):
-    
-    # Train and test probabilities
-    model_prob_train = model_prob[:N_train,:]
-    model_prob_test = model_prob[N_train:,:]
-    
-    # Train and test y binaries
-    y_binary_train = y_binary[:N_train]
-    y_binary_test = y_binary[N_train:]
+    # All pred, y and weights
+    pred_all = np.concatenate([pred_train,pred_test])
+    y_all = np.concatenate([y_train,y_test])
+    w_all = np.concatenate([w_train,w_test])
     
     ### Separate bkg and sig for each ###
     
-    # All probability bkg and sig
-    model_prob_bkg = model_prob[y_binary==0]
-    model_prob_sig = model_prob[y_binary==1]
+    # All bkg and sig
+    pred_all_bkg = pred_all[y_all==0]
+    pred_all_sig = pred_all[y_all==1]
     
-    # Train probability bkg and sig
-    model_prob_train_bkg = model_prob_train[y_binary_train==0]
-    model_prob_train_sig = model_prob_train[y_binary_train==1]
+    w_all_bkg = w_all[y_all==0]
+    w_all_sig = w_all[y_all==1]
+
+    # Train bkg and sig
+    pred_train_bkg = pred_train[y_train==0]
+    pred_train_sig = pred_train[y_train==1]
     
-    # Test probability bkg and sig
-    model_prob_test_bkg = model_prob_test[y_binary_test==0]
-    model_prob_test_sig = model_prob_test[y_binary_test==1]
+    w_train_bkg = w_train[y_train==0]
+    w_train_sig = w_train[y_train==1]
     
+    # Test bkg and sig
+    pred_test_bkg = pred_test[y_test==0]
+    pred_test_sig = pred_test[y_test==1]
+    
+    w_test_bkg = w_test[y_test==0]
+    w_test_sig = w_test[y_test==1]
+    
+    test_len = len(y_test)
+    train_len = len(y_train)
+
     ### Pack into tuples ###
-    bkg = (model_prob_bkg, model_prob_train_bkg, model_prob_test_bkg)
-    sig = (model_prob_sig, model_prob_train_sig, model_prob_test_sig)
+    bkg = (pred_all_bkg, pred_train_bkg, pred_test_bkg)
+    sig = (pred_all_sig, pred_train_sig, pred_test_sig)
+    w_bkg = (w_all_bkg, w_train_bkg, w_test_bkg)
+    w_sig = (w_all_sig, w_train_sig, w_test_sig)
     
     # Define an additional title and save term for each
     add_term = ['all','train','test']
@@ -791,16 +773,6 @@ def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, sha
     # DATA EXTRACTION #
     ###################
     
-    # Only need the ttZ background
-    N_ttZ = N_arr[0]
-    N_ttWp = N_arr[2]
-    N_ggA_460_360 = N_arr[3]
-    N_ggA_500_360 = N_arr[4]
-    N_ggA_600_360 = N_arr[5]
-    N_ggA_600_400 = N_arr[6]
-    N_ggA_600_500 = N_arr[7]
-    N_ggA_500_400 = N_arr[8]
-    
     # Extract additonal arguments from kwargs
     for i, j in kwargs.items():
         if i == "xtitle":
@@ -814,30 +786,6 @@ def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, sha
         elif i=="addText":
             addTextbool = True
             addText = j
-
-    # Extract the ttZ weight
-    ttZ_weight = (weight[0:N_ttZ])[0]
-
-    # Extract the signal weights based on the label
-    # Just take the first value since they're all the same per signal
-
-    if label[1] == 'ggA_460_360':
-        sig_weight = (weight[N_ttWp:N_ggA_460_360])[0]
-
-    elif label[1] == 'ggA_500_360':
-        sig_weight = (weight[N_ggA_460_360:N_ggA_500_360] )[0]
-        
-    elif label[1] == 'ggA_600_360':
-        sig_weight = (weight[N_ggA_500_360:N_ggA_600_360])[0]
-
-    elif label[1] == 'ggA_600_400':
-        sig_weight = (weight[N_ggA_600_360:N_ggA_600_400] )[0]
-        
-    elif label[1] == 'ggA_600_500':
-        sig_weight = (weight[N_ggA_600_400:N_ggA_600_500])[0]
-        
-    elif label[1] == 'ggA_500_400':
-        sig_weight = (weight[N_ggA_600_500:N_ggA_500_400])[0]
 
     color = ['cyan','red']
     
@@ -855,11 +803,14 @@ def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, sha
         # PLOT BACKGROUND #
         ###################
 
+        # Reshape the weights
+        current_bkg_weight = w_bkg[i].reshape((len(w_bkg[i]),1)) 
+
         # Calculate counts
-        count,edge = np.histogram(bkg[i], bins=bins)
+        count,edge = np.histogram(bkg[i], bins=bins, weights=current_bkg_weight)
         
-        # Apply the weight
-        count = count*ttZ_weight
+        # # # Apply the weight
+        # count = count*ttZ_weight #[i]
         
         # Calculate the sum for shape comparison with signal
         if shaped:
@@ -872,11 +823,14 @@ def ProbHist(y_binary, model_prob, N_train, Nb, weight, N_arr, close, label, sha
         # PLOT SIGNAL #
         ###############
         
-        # Calculate counts
-        step_count,edge = np.histogram(sig[i], bins=bins)
+        # Reshape the weights
+        current_sig_weight = w_sig[i].reshape((len(w_sig[i]),1)) 
         
-        # Apply the weight, not needed for shape comparison
-        step_count = step_count*sig_weight
+        # Calculate counts
+        step_count,edge = np.histogram(sig[i], bins=bins, weights=current_sig_weight)
+        
+        # # Apply the weight, not needed for shape comparison
+        # step_count = step_count*sig_weight
         
         # Calculate the sum for shape comparison with signal
         if shaped:
