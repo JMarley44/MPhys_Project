@@ -54,10 +54,9 @@ def SVM(X_train, y_train, X_test, C, gamma, tol, tag, ForceModel):
     sig_prob_train = prob_train[:,1]
     sig_prob_test = prob_test[:,1]
 
-    
     return sig_prob_train, sig_prob_test #, bkg_prob_train, bkg_prob_test
 
-def SVM_opt(X_train, y_train, X_test, y_test, weight, N_arr, C, gamma, tol, tag):    
+def SVM_opt(X_train, y_train, X_test, y_test, w_train, w_test, C, gamma, tol, tag):    
 
     import Functions as f    
 
@@ -111,13 +110,14 @@ def SVM_opt(X_train, y_train, X_test, y_test, weight, N_arr, C, gamma, tol, tag)
                             
                             saveas='SVM/'+ tag +'/Optimisation/C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_')
                 
-                f.ProbHist(sig_prob_train, sig_prob_test, y_train, y_test, 21, weight, N_arr, close=True, 
+                f.ProbHist(sig_prob_train, sig_prob_test, y_train, y_test, 
+                           w_train, w_test, 21, close=True, 
                       label=['ttZ',('ggA_'+ tag)], xtitle='Probability of signal', ytitle='Events', 
                         
                       title='SVM_'+ tag +'_C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_', 
                       
                       saveas='SVM/'+ tag +'/Optimisation/C=' + str(C[i]) + '_gamma=' + str(gamma[j]) + '_' +'tol=' + str(tol[k]) + '_')
-                
+    
                 counter=counter+1
 
 

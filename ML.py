@@ -13,7 +13,7 @@ import keras
 
 import numpy as np
 
-def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close, type_tag, 
+def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_train, forceFit, close, type_tag, 
        epochs, batch, lr, 
        doES, ESpat,
        doRL, RLrate, RLpat,
@@ -30,9 +30,9 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
         if forceFit:
             
             print()
-            print('***********************')
+            print('**************************')
             print('Forcing '+ type_tag[0] + ' Fit: ' + type_tag[1])
-            print('***********************')
+            print('**************************')
             print()
             raise Exception
             
@@ -44,12 +44,24 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
         X_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_test.npy', allow_pickle=True)
         X_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_train.npy', allow_pickle=True)
         
-        # Load the previous y data for this model to return to plots
+        # Load the previous y and w data for this model to return to plots
         y_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_test.npy', allow_pickle=True)
         y_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_train.npy', allow_pickle=True)
         
+        w_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_test.npy', allow_pickle=True)
+        w_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_train.npy', allow_pickle=True)
+        
+        
     except:
 
+        if not forceFit:        
+            print()
+            print('++++++++++++++++++++++++++')
+            print('No model for '+ type_tag[0] + ' Fit: ' + type_tag[1])
+            print('Retraining the model')
+            print('++++++++++++++++++++++++++')
+            print()
+            
         # THE MODEL #
         model = Sequential()
         model.add(Dense(input_node, input_dim=model_length, activation='relu'))
@@ -87,6 +99,8 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
         
         # Convert all to flaot32
         w_train = np.asarray(w_train).astype('float32')
+        w_test = np.asarray(w_test).astype('float32')
+        w_norm_train = np.asarray(w_norm_train).astype('float32')
         X_train = np.asarray(X_train).astype('float32')
         y_train = np.asarray(y_train).astype('float32')
 
@@ -98,26 +112,26 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
             rlrop = ReduceLROnPlateau(monitor='val_loss', factor=RLrate, patience=RLpat)
             # Fit the model with early stopping and reducable learning rate
             history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch,
-                                        sample_weight=w_train, validation_split=0.2,
+                                        sample_weight=w_norm_train, validation_split=0.2,
                                         callbacks=[es, rlrop])
         elif doES:
             # Define early stopping
             es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=ESpat)
             # Fit the model with early stopping 
             history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch,
-                                        sample_weight=w_train, validation_split=0.2,
+                                        sample_weight=w_norm_train, validation_split=0.2,
                                         callbacks=[es])
         elif doRL:
             # Define learning rate reduction
             rlrop = ReduceLROnPlateau(monitor='val_loss', factor=RLrate, patience=RLpat)
             # Fit the model with reducable learning rate
             history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch,
-                                        sample_weight=w_train, validation_split=0.2, 
+                                        sample_weight=w_norm_train, validation_split=0.2, 
                                         callbacks=[rlrop])
         else:
             # Fit the model without early stopping and reducable learning rate
             history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch,
-                                        sample_weight=w_train, validation_split=0.2)
+                                        sample_weight=w_norm_train, validation_split=0.2)
         
         print(history.history.keys())
 
@@ -131,6 +145,8 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
             np.save(type_tag[0] + "_models/" + type_tag[1] + '/X_train', X_train)
             np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_test', y_test)
             np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_train', y_train)
+            np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_train', w_train)
+            np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_test', w_test)
             
             # Make a plot of accuracy etc.
             
@@ -171,10 +187,10 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, forceFit, close,
     pred_test = model.predict(X_test)
 
     # Return the predictions and the y values (in case they are loaded)
-    return pred_train, pred_test, y_train, y_test
+    return pred_train, pred_test, y_train, y_test, w_train, w_test
 
 
-def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
+def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, model_length,
        epochs, batch, lr, 
        doES, ESpat,
        doRL, RLrate, RLpat,
@@ -220,14 +236,11 @@ def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
     try:
         extra_node_len = len(extra_node)
     except:
-        if extra_node == 0:
-            extra_node_len = 0
-        else:
-            extra_node_len = 1
-            extra_node = np.array([extra_node])
+        extra_node_len = 1
+        extra_node = np.array([extra_node])
 
     all_length = lr_len*epoch_len*batch_len*input_node_len*mid_node_len*extra_node_len
-    AUC_array = np.zeros(all_length)
+    #AUC_array = np.zeros(all_length)
     
     counter = 0
     
@@ -246,9 +259,11 @@ def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
                                 add_term = ' ' + ' - node3 = ' + str(extra_node[p]) 
                             else:
                                 add_term = ''
+
             
-                            ### The model ###
-                            pred_train, pred_test, y_train, y_test = ML(X_train, y_train, X_test, y_test, model_length, 
+                            ### The model ###   
+                            pred_train, pred_test, y_train, y_test, w_train, w_test = ML(X_train, y_train, X_test, y_test, model_length,
+                                                                        w_train, w_test, w_norm_train,
                                          forceFit=True, close=False, optimisation=True,
                                          
                                          # Epochs batch and lr
@@ -267,7 +282,8 @@ def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
                                          type_tag=0
                                          )
                         
-                            AUC = f.ROC_Curve(pred_train, pred_test, y_train, y_test, close=True, 
+                            #AUC = 
+                            f.ROC_Curve(pred_train, pred_test, y_train, y_test, close=True, 
                                         title=(type_tag[0] + '_' + type_tag[1]), 
                                         
                                         saveas=(type_tag[0] + '/' + type_tag[1] + '/Optimisation/' + 'ROC ' +
@@ -279,10 +295,9 @@ def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
                                                 ' - node1 = ' +str(input_node[l]) +  ' ' +
                                                 ' - node2 = ' + str(mid_node[m]) +  add_term
                                                 
-                                                ))
-                            
-                            #!!! This tag needs fixing, how have I been able to run 500_400 opt runs at all???
-                            f.ProbHist(pred_train, pred_test, y_train, y_test, 21, weight, N_arr, close=True, 
+                                                ))     
+
+                            f.ProbHist(pred_train, pred_test, y_train, y_test, w_train, w_test, 21, close=True, 
                                      label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
                                         title=(type_tag[0] + '_' + type_tag[1]), 
                                         
@@ -301,10 +316,9 @@ def ML_opt(X_train, y_train, X_test, y_test, model_length, N_arr, weight,
                                         addText = 'epoch: ' + str(epochs[j]) + '\n' + 
                                         'batch: ' + str(batch[k]))
                             
-                            AUC_array[counter] = AUC
+                            #AUC_array[counter] = AUC
                             counter = counter+1
                         
-    max_AUC = np.amax(AUC_array)
-    return max_AUC
+    #max_AUC = np.amax(AUC_array)
 
 

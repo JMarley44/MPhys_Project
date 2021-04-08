@@ -64,6 +64,10 @@ try:
     lep2_pt = np.load('Arrays/lep2_pt.npy', allow_pickle=True)
     lep3_pt = np.load('Arrays/lep3_pt.npy', allow_pickle=True)
     
+    lep1_phi = np.load('Arrays/lep1_phi.npy', allow_pickle=True)
+    lep2_phi = np.load('Arrays/lep2_phi.npy', allow_pickle=True)
+    lep3_phi = np.load('Arrays/lep3_phi.npy', allow_pickle=True)
+    
     lep_dphi = np.load('Arrays/lep_dphi.npy', allow_pickle=True)
     lep_dr = np.load('Arrays/lep_dr.npy', allow_pickle=True)
 
@@ -77,6 +81,9 @@ try:
     jet1_eta = np.load('Arrays/jet1_eta.npy', allow_pickle=True)
     jet2_eta = np.load('Arrays/jet2_eta.npy', allow_pickle=True)
     
+    jet1_phi = np.load('Arrays/jet1_phi.npy', allow_pickle=True)
+    jet2_phi = np.load('Arrays/jet2_phi.npy', allow_pickle=True)
+    
     jet_dphi = np.load('Arrays/jet_dphi.npy', allow_pickle=True)
     jet_dr = np.load('Arrays/jet_dr.npy', allow_pickle=True)
     
@@ -86,6 +93,9 @@ try:
     
     bjet1_pt = np.load('Arrays/bjet1_pt.npy', allow_pickle=True)
     bjet2_pt = np.load('Arrays/bjet2_pt.npy', allow_pickle=True)
+    
+    bjet1_phi = np.load('Arrays/bjet1_phi.npy', allow_pickle=True)
+    bjet2_phi = np.load('Arrays/bjet2_phi.npy', allow_pickle=True)
     
     # tops
     top1_four_mom = np.load('Arrays/top1_four_mom.npy', allow_pickle=True)
@@ -377,7 +387,7 @@ except:
     
     for i in range(N):
         
-        if (print_count % 1000==0):
+        if (print_count % 5000==0):
             print('.', end='')
         
         print_count += 1
@@ -718,9 +728,9 @@ except:
     # End of Main loop #
     ####################
     
-    print('\nFinished!')
-    print(j_count + z_count, ' non-viable decays removed')
-    
+    print(' - Done!')
+    print(j_count + z_count,' non-viable decays removed\n')
+
     dtop_four_mom = top1_four_mom - top2_four_mom
     top12_pt = np.sqrt(((dtop_four_mom [:,1])**2)+((dtop_four_mom [:,2])**2))
 
@@ -848,7 +858,11 @@ except:
     
     np.save('Arrays/lep1_pt.npy', lep1_pt)     
     np.save('Arrays/lep2_pt.npy', lep2_pt)     
-    np.save('Arrays/lep3_pt.npy', lep3_pt)  
+    np.save('Arrays/lep3_pt.npy', lep3_pt)
+    
+    np.save('Arrays/lep1_phi.npy', lep1_phi)     
+    np.save('Arrays/lep2_phi.npy', lep2_phi)     
+    np.save('Arrays/lep3_phi.npy', lep3_phi) 
     
     np.save('Arrays/lep_dphi.npy', lep_dphi) # Maybe move this to SVM bunch
     np.save('Arrays/lep_dr.npy', lep_dr)
@@ -861,7 +875,10 @@ except:
     np.save('Arrays/jet2_pt.npy', jet2_pt)
 
     np.save('Arrays/jet1_eta.npy', jet1_eta)     
-    np.save('Arrays/jet2_eta.npy', jet2_eta)       
+    np.save('Arrays/jet2_eta.npy', jet2_eta)
+
+    np.save('Arrays/jet1_phi.npy', jet1_phi)     
+    np.save('Arrays/jet2_phi.npy', jet2_phi)        
     
     np.save('Arrays/jet_dphi.npy', jet_dphi) # Maybe move this to SVM bunch
     np.save('Arrays/jet_dr.npy', jet_dr)
@@ -873,6 +890,9 @@ except:
     
     np.save('Arrays/bjet1_pt.npy', bjet1_pt)     
     np.save('Arrays/bjet2_pt.npy', bjet2_pt)
+    
+    np.save('Arrays/bjet1_phi.npy', bjet1_phi)     
+    np.save('Arrays/bjet2_phi.npy', bjet2_phi)
     
     # tops
     
@@ -915,6 +935,8 @@ doPlots = False
 
 if doPlots:
     
+    print('Plotting plots.', end='')
+    
     ############
     # Singular #
     ############
@@ -933,10 +955,14 @@ if doPlots:
     # Signals #
     ###########
     
-    all_signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400']
-    select_signals = ['ttZ', 'other', '460_360', '500_360', '600_360', '600_400', '500_400_1']
+    # All signals for the limit calculation
+    all_signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400','500_400_1']
     
-    all_line = ['-',':','--','--','-',':']
+    # Selected signals, choose one
+    select_signals = ['ttZ', 'other', '460_360', '500_360', '600_360']
+    # select_signals = ['ttZ', 'other', '600_400', '600_500', '500_400_1']
+    
+    all_line = ['-',':','--','--','-',':','-']
     select_line = ['--',':','--','--','-','--',':']
     
     ##########
@@ -970,8 +996,29 @@ if doPlots:
                  saveas="Z_pT", signals = select_signals, line = select_line)
     
     # delta m
+    f.SignalHist(delta_m, weight, 26, N_arr, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
+                 saveas="delta_m", signals = select_signals, line = select_line, scale='log')
+    
+    ##########
+    # Limits #
+    ##########
+    
+    # delta m
     delta_m_bkg_count, delta_m_sig_count = f.SignalHist(delta_m, weight, 26, N_arr, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
-                 saveas="delta_m", signals = all_signals, line = all_line, xlim=[0, 2000], addText = 'Weighted to luminosity')
+                 saveas="delta_m", signals = all_signals, line = all_line, xlim=[0, 2000], addText = 'Weighted to luminosity', limit=True)
+    
+    # Z pt
+    Z_pt_bkg_count, Z_pt_sig_count = f.SignalHist(delta_m, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="$Z_{pT}$",
+                 saveas="Z_pT", signals = all_signals, line = all_line, addText = 'Weighted to luminosity', limit=True)
+    
+    print('.', end='')
+    
+    ### Save the limit counts for when plots are disabled
+    np.save('Arrays/delta_m_limit_bkg.npy', delta_m_bkg_count)
+    np.save('Arrays/delta_m_limit_sig.npy', delta_m_sig_count) 
+    
+    np.save('Arrays/Z_limit_bkg.npy', Z_pt_bkg_count)
+    np.save('Arrays/Z_limit_sig.npy', Z_pt_sig_count) 
     
     ##################
     # Shallow Shapes #
@@ -979,7 +1026,7 @@ if doPlots:
     
     # delta m
     f.SignalHist(delta_m, weight, 26, N_arr, close=True, xtitle="$\Delta$m (GeV)", ytitle="Events", title="$\Delta$m",
-                 saveas="Shallow/delta_m", signals = all_signals, 
+                 saveas="Shallow/delta_m", signals = select_signals, 
                  shaped=True, line = select_line, xlim=[0, 1000])
     
     # met pt
@@ -1087,6 +1134,8 @@ if doPlots:
                   saveas="Shallow/top2_phi", signals = select_signals, 
                   shaped = True, line = select_line)
     
+    print('.', end='')
+    
     ###############
     # Deep shapes #
     ###############
@@ -1101,14 +1150,24 @@ if doPlots:
     f.SignalHist(lep3_pt, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 3 $p_T$",
                  saveas="Deep/Lepton3_pt", signals = select_signals, line = select_line, shaped=True, xlim=[0, 250])
     
+    # Lepton pz
+    f.SignalHist(lep1_four_mom[:,3], weight, 25, N_arr, close=True, xtitle="$p_z$ (GeV)", ytitle="Events", title="Lepton 1 $p_z$",
+                 saveas="Deep/Lepton1_pz", signals = select_signals, line = select_line, shaped=True, xlim=[0, 500])
+    
+    f.SignalHist(lep2_four_mom[:,3], weight, 25, N_arr, close=True, xtitle="$p_z$ (GeV)", ytitle="Events", title="Lepton 2 $p_z$",
+                 saveas="Deep/Lepton2_pz", signals = select_signals, line = select_line, shaped=True, xlim=[0, 250])
+    
+    f.SignalHist(lep3_four_mom[:,3], weight, 25, N_arr, close=True, xtitle="$p_z$ (GeV)", ytitle="Events", title="Lepton 3 $p_z$",
+                 saveas="Deep/Lepton3_pz", signals = select_signals, line = select_line, shaped=True, xlim=[0, 250])
+    
     # Lepton phi
-    f.SignalHist(lep1_phi, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 1 $\phi$",
+    f.SignalHist(lep1_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="Lepton 1 $\phi$",
                  saveas="Deep/Lepton1_phi", signals = select_signals, line = select_line, shaped=True)
     
-    f.SignalHist(lep2_phi, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 2 $\phi$",
+    f.SignalHist(lep2_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="Lepton 2 $\phi$",
                  saveas="Deep/Lepton2_phi", signals = select_signals, line = select_line, shaped=True)
     
-    f.SignalHist(lep3_phi, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Lepton 3 $\phi$",
+    f.SignalHist(lep3_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="Lepton 3 $\phi$",
                  saveas="Deep/Lepton3_phi", signals = select_signals, line = select_line, shaped=True)
     
     # Jet pt
@@ -1118,6 +1177,13 @@ if doPlots:
     f.SignalHist(jet2_pt, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="Jet 2 $p_T$",
              saveas="Deep/Jet2_pt", signals = select_signals, line = select_line, shaped=True, xlim=[0, 250])
     
+    # Jet phi
+    f.SignalHist(jet1_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="jet 1 $\phi$",
+                 saveas="Deep/jet1_phi", signals = select_signals, line = select_line, shaped=True)
+    
+    f.SignalHist(jet2_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="jet 2 $\phi$",
+                 saveas="Deep/jet2_phi", signals = select_signals, line = select_line, shaped=True)
+    
     # bJet pt
     f.SignalHist(bjet1_pt, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet 1 $p_T$",
                  saveas="Deep/bJet1_pt", signals = select_signals, line = select_line, shaped=True)
@@ -1125,12 +1191,22 @@ if doPlots:
     f.SignalHist(bjet2_pt, weight, 25, N_arr, close=True, xtitle="$p_T$ (GeV)", ytitle="Events", title="bJet 2 $p_T$",
              saveas="Deep/bJet2_pt", signals = select_signals, line = select_line, shaped=True)
     
+    # bJet phi
+    f.SignalHist(bjet1_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="bjet 1 $\phi$",
+                 saveas="Deep/bjet1_phi", signals = select_signals, line = select_line, shaped=True)
+    
+    f.SignalHist(bjet2_phi, weight, 25, N_arr, close=True, xtitle="$\phi$ (rad)", ytitle="rad", title="bjet 2 $\phi$",
+                 saveas="Deep/bjet2_phi", signals = select_signals, line = select_line, shaped=True)
+    
     # MET pt and phi
     f.SignalHist(met_pt, weight, 25, N_arr, close=True, xtitle="$E^{T}_{miss}$ (GeV)", ytitle="Events", title="$E^{T}_{miss}$",
                  saveas="Deep/met_pt", signals = select_signals, line = select_line, shaped=True)
     
     f.SignalHist(met_phi, weight, 25, N_arr, close=True, xtitle="$E^{T}_{miss}$ $\phi$ (rad)", ytitle="rad", title="$E^{T}_{miss}$ $\phi$",
              saveas="Deep/met_phi", signals = select_signals, line = select_line, shaped=True)
+
+    
+    print(' - Done!')
 
 #############################
 #  Machine learning aspect  #
@@ -1144,6 +1220,7 @@ if doPlots:
 # ggA_600_400 - [N_ggA_600_360:N_ggA_600_400]       length = 1168
 # ggA_600_500 - [N_ggA_600_400:N_ggA_600_500]       length = 1372
 # ggA_500_400 - [N_ggA_600_500:N_ggA_500_400]       length = 2059
+# ggA_500_400_1 - [N_ggA_500_400:N_ggA_500_400_1]
 
 # Print the new lengths after event deletion
 # print('460_360: ', N_ggA_460_360-N_ttWp)
@@ -1164,171 +1241,276 @@ if doPlots:
 #  SUPPORT VECTOR MACHINE   #
 #############################
 
-doSVM = False
+doSVM = True
 
 forceModel1 = False
 forceModel2 = False
 forceModel3 = False
 forceModel4 = False
 forceModel5 = False
+forceModel6 = False
 
 SVM_Opt1 = False
 SVM_Opt2 = False
 SVM_Opt3 = False
 SVM_Opt4 = False
 SVM_Opt5 = False
+SVM_Opt6 = False
 
 if doSVM:
     
     ###########
-    # 600_500 #
+    # 460_360 #
     ###########
     
     ### Model 1 ###
     model_1 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
     
-    # Just m and Z
-    #model_1 = (delta_m, Z_pt)
-    
     # Prepare for SVM usage
     (model_1_data, model_1_data_norm, X_train_1, y_train_1, 
-     X_test_1, y_test_1, y_binary_1, SVM_N_train_1) = f.data_prep(model_1, N_ttZ, N, N_ggA_600_400, N_ggA_600_500)
+     X_test_1, y_test_1, w_train_1, w_test_1, w_norm_train_1, y_binary_1, 
+     SVM_N_train_1) = f.data_prep(model_1, N_ttZ, N, weight, N_ttWp, N_ggA_460_360)
+    
+    y_train_1 = y_train_1.astype(int)
     
     # Build the SVM
     model_1_prob_train, model_1_prob_test = s.SVM(X_train_1, y_train_1, X_test_1, 
                                                   C=10, gamma=0.01, tol=1, tag='1', ForceModel=forceModel1)
-
     
     ### PLOTS 1 ###
     
     # ROC Curve
-    f.ROC_Curve(model_1_prob_train, model_1_prob_test, y_train_1, y_test_1, close=True, title="SVM_600_500_", saveas='SVM/600_500/')
+    f.ROC_Curve(model_1_prob_train, model_1_prob_test, y_train_1, y_test_1, close=True, title="SVM_460_360_", saveas='SVM/460_360/')
     
-    f.ProbHist(model_1_prob_train, model_1_prob_test, y_train_1, y_test_1, 21, weight, N_arr, close=True, 
-          label=['ttZ','ggA_600_500'], xtitle="Probability of signal", ytitle="Events", 
-            title="SVM_600_500", saveas='SVM/600_500/')
+    f.ProbHist(model_1_prob_train, model_1_prob_test, y_train_1, y_test_1, 
+               w_train_1, w_test_1, 21, close=True, 
+               label=['ttZ','ggA_460_360'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_460_360", saveas='SVM/460_360/')
     
-    C = (1000,100,10,5,1,0.1,0.01,0.001,0.0001)
-    gamma = (100,10,5,1,0.1,0.01,0.001,0.0001,0.00001)
+    SVM_1_bkg_count, SVM_1_sig_count = f.ProbLimitCount(model_1_prob_train, model_1_prob_test, y_train_1, y_test_1, 
+               w_train_1, w_test_1, 21, close=True, 
+              label=['ttZ','ggA_460_360'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_460_360", saveas='SVM/460_360/')
+
+    C = (1000,100,10,1,0.1,0.01,0.001,0.0001)
+    gamma = (1000,100,10,1,0.1,0.01,0.001,0.0001)
     tol = (1, 0.5, 0.1, 0.01, 0.001)
     
     if SVM_Opt1:
-        s.SVM_opt(X_train_1, y_train_1, X_test_1, y_test_1, weight, N_arr, C=C, gamma=gamma, tol=tol, tag='600_500')   
-    
-    ###########
-    # 600_360 #
-    ###########
-
-    ### Model 2 ###
-    model_2 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr, met_pt)
-    
-    (model_2_data, model_2_data_norm, X_train_2, y_train_2, 
-     X_test_2, y_test_2, y_binary_2, SVM_N_train_2) = f.data_prep(model_2, N_ttZ, N, N_ggA_500_360, N_ggA_600_360)
-    
-    model_2_prob_train, model_2_prob_test = s.SVM(X_train_2, y_train_2, X_test_2, 
-                                                  C=0.1, gamma=5, tol=1, tag='2', ForceModel=forceModel2)
-
-    ### Plots 2 ###
-    f.ROC_Curve(model_2_prob_train, model_2_prob_test, y_train_2, y_test_2, close=True, title="SVM_600_360_", saveas='SVM/600_360/')
-    
-    f.ProbHist(model_2_prob_train, model_2_prob_test, y_train_2, y_test_2, 21, weight, N_arr, close=True, 
-          label=['ttZ','ggA_600_360'], xtitle="Probability of signal", ytitle="Events", 
-            title="SVM_600_360", saveas='SVM/600_360/')
-    
-    if SVM_Opt2:
-        s.SVM_opt(X_train_2, y_train_2, X_test_2, y_test_2, weight, N_arr, C=C, gamma=gamma, tol=tol, tag='600_360')  
+        s.SVM_opt(X_train_1, y_train_1, X_test_1, y_test_1,  w_train_1, w_test_1, C=C, gamma=gamma, tol=tol, tag='460_360')   
     
     ###########
     # 500_360 #
     ###########
-        
-    ### Model 3 ###
-    model_3 = (delta_m, Z_pt, H_pt, M_ttZ, met_pt)
     
-    (model_3_data, model_3_data_norm, X_train_3, y_train_3, 
-     X_test_3, y_test_3, y_binary_3, SVM_N_train_3) = f.data_prep(model_3, N_ttZ, N, N_ggA_460_360, N_ggA_500_360)
+    ### Model 2 ###
+    model_2 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
     
-    model_3_prob_train, model_3_prob_test = s.SVM(X_train_3, y_train_3, X_test_3, 
-                                                  C=0.1, gamma=5, tol=1E-3, tag='3', ForceModel=forceModel3)
+    # Prepare for SVM usage
+    (model_2_data, model_2_data_norm, X_train_2, y_train_2, 
+     X_test_2, y_test_2, w_train_2, w_test_2, w_norm_train_2, y_binary_2, 
+     SVM_N_train_2) = f.data_prep(model_2, N_ttZ, N, weight, N_ggA_460_360, N_ggA_500_360)
     
-    ### Plots 3 ###
-    f.ROC_Curve(model_3_prob_train, model_3_prob_test, y_train_3, y_test_3, close=True, title="SVM_500_360_", saveas='SVM/500_360/')
+    y_train_2 = y_train_2.astype(int)
     
-    f.ProbHist(model_3_prob_train, model_3_prob_test, y_train_3, y_test_3, 21, weight, N_arr, close=True, 
-          label=['ttZ','ggA_500_360'], xtitle="Probability of signal", ytitle="Events", 
+    # Build the SVM
+    model_2_prob_train, model_2_prob_test = s.SVM(X_train_2, y_train_2, X_test_2, 
+                                                  C=10, gamma=0.01, tol=1, tag='2', ForceModel=forceModel2)
+    
+    ### PLOTS 2 ###
+    
+    # ROC Curve
+    f.ROC_Curve(model_2_prob_train, model_2_prob_test, y_train_2, y_test_2, close=True, title="SVM_500_360_", saveas='SVM/500_360/')
+    
+    f.ProbHist(model_2_prob_train, model_2_prob_test, y_train_2, y_test_2, 
+               w_train_2, w_test_2, 21, close=True, 
+               label=['ttZ','ggA_500_360'], xtitle="Probability of signal", ytitle="Events", 
             title="SVM_500_360", saveas='SVM/500_360/')
     
-    if SVM_Opt3:
-        s.SVM_opt(X_train_3, y_train_3, X_test_3, y_test_3, weight, N_arr, C=C, gamma=gamma, tol=tol, tag='500_360')  
+    SVM_2_bkg_count, SVM_2_sig_count = f.ProbLimitCount(model_2_prob_train, model_2_prob_test, y_train_2, y_test_2, 
+               w_train_2, w_test_2, 21, close=True, 
+              label=['ttZ','ggA_500_360'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_500_360", saveas='SVM/500_360/')
 
+    if SVM_Opt2:
+        s.SVM_opt(X_train_2, y_train_2, X_test_2, y_test_2, w_train_2, w_test_2, C=C, gamma=gamma, tol=tol, tag='500_360')   
+        
     ###########
-    # 460_360 #
+    # 600_360 #
     ###########
-       
+    
+    ### Model 3 ###
+    model_3 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
+    
+    # Prepare for SVM usage
+    (model_3_data, model_3_data_norm, X_train_3, y_train_3, 
+     X_test_3, y_test_3, w_train_3, w_test_3, w_norm_train_3, y_binary_3, 
+     SVM_N_train_3) = f.data_prep(model_3, N_ttZ, N, weight, N_ggA_500_360, N_ggA_600_360)
+    
+    y_train_3 = y_train_3.astype(int)
+    
+    # Build the SVM
+    model_3_prob_train, model_3_prob_test = s.SVM(X_train_3, y_train_3, X_test_3, 
+                                                  C=10, gamma=0.01, tol=1, tag='3', ForceModel=forceModel3)
+    
+    ### PLOTS 3 ###
+    
+    # ROC Curve
+    f.ROC_Curve(model_3_prob_train, model_3_prob_test, y_train_3, y_test_3, close=True, title="SVM_600_360_", saveas='SVM/600_360/')
+    
+    f.ProbHist(model_3_prob_train, model_3_prob_test, y_train_3, y_test_3, 
+               w_train_3, w_test_3, 21, close=True, 
+               label=['ttZ','ggA_600_360'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_360", saveas='SVM/600_360/')
+    
+    SVM_3_bkg_count, SVM_3_sig_count = f.ProbLimitCount(model_3_prob_train, model_3_prob_test, y_train_3, y_test_3, 
+               w_train_3, w_test_3, 21, close=True, 
+              label=['ttZ','ggA_600_360'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_360", saveas='SVM/600_360/')
+    
+    if SVM_Opt3:
+        s.SVM_opt(X_train_3, y_train_3, X_test_3, y_test_3, w_train_3, w_test_3, C=C, gamma=gamma, tol=tol, tag='600_360')   
+        
+    ###########
+    # 600_400 #
+    ###########
+    
     ### Model 4 ###
-    model_4 = (delta_m, Z_pt, top1_pt, top2_pt)
+    model_4 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
     
+    # Prepare for SVM usage
     (model_4_data, model_4_data_norm, X_train_4, y_train_4, 
-     X_test_4, y_test_4, y_binary_4, SVM_N_train_4) = f.data_prep(model_3, N_ttZ, N, N_ttWp, N_ggA_460_360)
+     X_test_4, y_test_4, w_train_4, w_test_4, w_norm_train_4, y_binary_4, 
+     SVM_N_train_4) = f.data_prep(model_4, N_ttZ, N, weight, N_ggA_600_360, N_ggA_600_400)
     
+    y_train_4 = y_train_4.astype(int)
+    
+    # Build the SVM
     model_4_prob_train, model_4_prob_test = s.SVM(X_train_4, y_train_4, X_test_4, 
-                                                  C=15, gamma=15, tol=1E-3, tag='4', ForceModel=forceModel4)
+                                                  C=10, gamma=0.01, tol=1, tag='4', ForceModel=forceModel4)
     
-    ### Plots 4 ###
-    f.ROC_Curve(model_4_prob_train, model_4_prob_test, y_train_4, y_test_4, close=True, title="SVM_460_360_", saveas='SVM/460_360/')
+    ### PLOTS 4 ###
     
-    f.ProbHist(model_4_prob_train, model_4_prob_test, y_train_4, y_test_4, 21, weight, N_arr, close=True, 
-          label=['ttZ','ggA_460_360'], xtitle="Probability of signal", ytitle="Events", 
-            title="SVM_460_360", saveas='SVM/460_360/')
+    # ROC Curve
+    f.ROC_Curve(model_4_prob_train, model_4_prob_test, y_train_4, y_test_4, close=True, title="SVM_600_400_", saveas='SVM/600_400/')
+    
+    f.ProbHist(model_4_prob_train, model_4_prob_test, y_train_4, y_test_4, 
+               w_train_4, w_test_4, 21, close=True, 
+               label=['ttZ','ggA_600_400'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_400", saveas='SVM/600_400/')
+    
+    SVM_4_bkg_count, SVM_4_sig_count = f.ProbLimitCount(model_4_prob_train, model_4_prob_test, y_train_4, y_test_4, 
+               w_train_4, w_test_4, 21, close=True, 
+              label=['ttZ','ggA_600_400'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_400", saveas='SVM/600_400/')
     
     if SVM_Opt4:
-        s.SVM_opt(X_train_4, y_train_4, X_test_4, y_test_4, weight, N_arr, C=C, gamma=gamma, tol=tol, tag='460_360')  
-
+        s.SVM_opt(X_train_4, y_train_4, X_test_4, y_test_4, w_train_4, w_test_4, C=C, gamma=gamma, tol=tol, tag='600_400')   
+        
     ###########
-    # 500_400 #
+    # 600_500 #
     ###########
     
-    ### Model 5 ### 
-    model_5 = (delta_m, Z_pt, H_pt)
+    ### Model 5 ###
+    model_5 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
     
+    # Prepare for SVM usage
     (model_5_data, model_5_data_norm, X_train_5, y_train_5, 
-    X_test_5, y_test_5, y_binary_5, SVM_N_train_5) = f.data_prep(model_5, N_ttZ, N, N_ggA_600_500, N_ggA_500_400)
+     X_test_5, y_test_5, w_train_5, w_test_5, w_norm_train_5, y_binary_5, 
+     SVM_N_train_5) = f.data_prep(model_5, N_ttZ, N, weight, N_ggA_600_400, N_ggA_600_500)
     
+    y_train_5 = y_train_5.astype(int)
+    
+    # Build the SVM
     model_5_prob_train, model_5_prob_test = s.SVM(X_train_5, y_train_5, X_test_5, 
-                                                  C=1, gamma=1E-3, tol=1, tag='5', ForceModel=forceModel5)
-
-    ### Plots 5 ###
-    f.ROC_Curve(model_5_prob_train, model_5_prob_test, y_train_5, y_test_5, close=True, title="SVM_500_400_", saveas='SVM/500_400/')
-
-    f.ProbHist(model_5_prob_train, model_5_prob_test, y_train_5, y_test_5, 21, weight, N_arr, close=True, 
-          label=['ttZ','ggA_500_400'], xtitle="Probability of signal", ytitle="Events", 
-            title="SVM_500_400", saveas='SVM/500_400/')
+                                                  C=10, gamma=0.01, tol=1, tag='5', ForceModel=forceModel5)
+    
+    ### PLOTS 5 ###
+    
+    # ROC Curve
+    f.ROC_Curve(model_5_prob_train, model_5_prob_test, y_train_5, y_test_5, close=True, title="SVM_600_500_", saveas='SVM/600_500/')
+    
+    f.ProbHist(model_5_prob_train, model_5_prob_test, y_train_5, y_test_5, 
+               w_train_5, w_test_5, 21, close=True, 
+               label=['ttZ','ggA_600_500'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_500", saveas='SVM/600_500/')
+    
+    SVM_5_bkg_count, SVM_5_sig_count = f.ProbLimitCount(model_5_prob_train, model_5_prob_test, y_train_5, y_test_5, 
+               w_train_5, w_test_5, 21, close=True, 
+              label=['ttZ','ggA_600_500'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_600_500", saveas='SVM/600_500/')
     
     if SVM_Opt5:
-        s.SVM_opt(X_train_5, y_train_5, X_test_5, y_test_5, weight, N_arr, C=C, gamma=gamma, tol=tol, tag='500_400')  
-      
+        s.SVM_opt(X_train_5, y_train_5, X_test_5, y_test_5, w_train_5, w_test_5, C=C, gamma=gamma, tol=tol, tag='600_500')   
+        
+    #############
+    # 500_400_1 #
+    #############
     
+    ### Model 6 ###
+    model_6 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
+    
+    # Prepare for SVM usage
+    (model_6_data, model_6_data_norm, X_train_6, y_train_6, 
+     X_test_6, y_test_6, w_train_6, w_test_6, w_norm_train_6, y_binary_6, 
+     SVM_N_train_6) = f.data_prep(model_6, N_ttZ, N, weight, N_ggA_500_400, N_ggA_500_400_1)
+    
+    y_train_6 = y_train_6.astype(int)
+    
+    # Build the SVM
+    model_6_prob_train, model_6_prob_test = s.SVM(X_train_6, y_train_6, X_test_6, 
+                                                  C=10, gamma=0.01, tol=1, tag='6', ForceModel=forceModel6)
+    
+    ### PLOTS 6 ###
+    
+    # ROC Curve
+    f.ROC_Curve(model_6_prob_train, model_6_prob_test, y_train_6, y_test_6, close=True, title="SVM_500_400_1_", saveas='SVM/500_400_1/')
+    
+    f.ProbHist(model_6_prob_train, model_6_prob_test, y_train_6, y_test_6, 
+               w_train_6, w_test_6, 21, close=True, 
+               label=['ttZ','ggA_500_400_1'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_500_400_1", saveas='SVM/500_400_1/')
+    
+    SVM_6_bkg_count, SVM_6_sig_count = f.ProbLimitCount(model_6_prob_train, model_6_prob_test, y_train_6, y_test_6, 
+               w_train_6, w_test_6, 21, close=True, 
+              label=['ttZ','ggA_500_400_1'], xtitle="Probability of signal", ytitle="Events", 
+            title="SVM_500_400_1", saveas='SVM/500_400_1/')
+    
+    if SVM_Opt6:
+        s.SVM_opt(X_train_6, y_train_6, X_test_6, y_test_6, w_train_6, w_test_6, C=C, gamma=gamma, tol=tol, tag='500_400_1')   
+
+      
 #####################
 #  SHALLOW NETWORK  #
 #####################
 
 doML = True
 
-# 600_500
+# 460_360
 ForceML1 = False 
 
-# 600_360
-ForceML2 = False  
-
 # 500_360
+ForceML2 = False 
+
+# 600_360
 ForceML3 = False
 
+# 600_400
+ForceML4 = False
+
+# 600_500
+ForceML5 = False
+
+# 500_400_1
+ForceML6 = False
+
+### OPT
 ML_Opt_1 = False
 
 if doML:
     
     ###########
-    # 600_500 #
+    # 460_360 #
     ###########
     
     ### ML model 1 ###
@@ -1337,7 +1519,7 @@ if doML:
     # Prepare data for ML
     (ML_model_1_data, ML_model_1_data_norm, ML_X_train_1, ML_y_train_1, ML_X_test_1, 
      ML_y_test_1, ML_w_train_1, ML_w_test_1, ML_w_norm_train_1,  ML_y_binary_1, 
-     ML_N_train_1) = f.data_prep(ML_model_1, N_ttZ, N, weight, N_ggA_600_400, N_ggA_600_500)
+     ML_N_train_1) = f.data_prep(ML_model_1, N_ttZ, N, weight, N_ttWp, N_ggA_460_360)
     
     model_length = len(ML_model_1)
     
@@ -1354,9 +1536,9 @@ if doML:
     extra_node = 12
     
     ### The model ###
-    ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1 = m.ML(
+    ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, ML_w_train_1, ML_w_test_1 = m.ML(
         ML_X_train_1, ML_y_train_1, ML_X_test_1, ML_y_test_1, model_length,
-                 ML_w_norm_train_1, forceFit=ForceML1, close=True, type_tag = ['ML', '600_500'],
+                 ML_w_train_1, ML_w_test_1, ML_w_norm_train_1, forceFit=ForceML1, close=True, type_tag = ['ML', '460_360'],
                  
                  # Epochs batch and lr
                  epochs = ML_epoch_1, batch = ML_batch_1, lr = ML_lr_1,
@@ -1371,12 +1553,17 @@ if doML:
                  input_node = input_node, mid_node = mid_node, extra_node = extra_node)
 
     f.ROC_Curve(ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, close=True, 
-                title=('ML_600_500_'), saveas=('ML/600_500/'))
+                title=('ML_460_360_'), saveas=('ML/460_360/'))
     
     f.ProbHist(ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, 
                ML_w_train_1, ML_w_test_1, 21, close=True, 
-             label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
-                title=('ML_600_500_'), saveas=('ML/600_500/'))
+             label=['ttZ','ggA_460_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_460_360_'), saveas=('ML/460_360/'))
+
+    ML_1_bkg_count, ML_1_sig_count = f.ProbLimitCount(ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, 
+               ML_w_train_1, ML_w_test_1, 21, close=True, 
+              label=['ttZ','ggA_460_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_460_360'), saveas=('ML/460_360/'))
 
     if ML_Opt_1:
             
@@ -1385,20 +1572,22 @@ if doML:
             
             input_node = np.array([input_node])
             mid_node = np.array([mid_node, mid_node*(4/3)])
-            DL_epoch_1 = np.array([150])
-            DL_batch_1 = np.array([10,20])
-            DL_lr_1 = np.array([0.05, 0.01, 0.005, 0.001])
+            extra_node = np.array([extra_node])
+            ML_epoch_1 = np.array([150])
+            ML_batch_1 = np.array([10,20])
+            ML_lr_1 = np.array([0.01, 0.001])
             
-            m.ML_opt(ML_X_train_1, ML_y_train_1, ML_y_binary_1, ML_all_1, model_length, ML_N_train_1, N_arr, weight, 
+            m.ML_opt(ML_X_train_1, ML_y_train_1, ML_X_test_1, ML_y_test_1, 
+                     ML_w_train_1, ML_w_test_1, ML_w_norm_train_1, model_length,
                ML_epoch_1, ML_batch_1, ML_lr_1, 
                doES=True, ESpat=35,
                doRL=False, RLrate=0, RLpat=0,
-               input_node=input_node, mid_node=mid_node, 
+               input_node=input_node, mid_node=mid_node, extra_node = extra_node,
                
-               type_tag = ['ML', '600_500'])
+               type_tag = ['ML', '460_360'])
             
     ###########
-    # 600_360 #
+    # 500_360 #
     ###########
     
     ### ML model 2 ###
@@ -1407,7 +1596,7 @@ if doML:
     # Prepare data for ML
     (ML_model_2_data, ML_model_2_data_norm, ML_X_train_2, ML_y_train_2, ML_X_test_2, 
       ML_y_test_2, ML_w_train_2, ML_w_test_2, ML_w_norm_train_2, ML_y_binary_2, 
-      ML_N_train_2) = f.data_prep(ML_model_2, N_ttZ, N, weight, N_ggA_500_360, N_ggA_600_360)
+      ML_N_train_2) = f.data_prep(ML_model_2, N_ttZ, N, weight, N_ggA_460_360, N_ggA_500_360)
     
     model_length = len(ML_model_2)
     
@@ -1424,9 +1613,9 @@ if doML:
     extra_node = 12
     
     ### The model ###
-    ML_pred_2_train, ML_pred_2_test, ML_y_train_2, ML_y_test_2 = m.ML(
+    ML_pred_2_train, ML_pred_2_test, ML_y_train_2, ML_y_test_2, ML_w_train_2, ML_w_test_2 = m.ML(
         ML_X_train_2, ML_y_train_2, ML_X_test_2, ML_y_test_2, model_length, 
-        ML_w_norm_train_1, forceFit=ForceML2, close=True, type_tag = ['ML', '600_360'],
+        ML_w_train_2, ML_w_test_2, ML_w_norm_train_2, forceFit=ForceML2, close=True, type_tag = ['ML', '500_360'],
                  
                   # Epochs batch and lr
                   epochs = ML_epoch_2, batch = ML_batch_2, lr = ML_lr_2,
@@ -1441,15 +1630,20 @@ if doML:
                   input_node = input_node, mid_node = mid_node, extra_node = extra_node)
 
     f.ROC_Curve(ML_pred_2_train, ML_pred_2_test, ML_y_train_2, ML_y_test_2, close=True, 
-                title=('ML_600_360_'), saveas=('ML/600_360/'))
+                title=('ML_500_360_'), saveas=('ML/500_360/'))
     
     f.ProbHist(ML_pred_2_train, ML_pred_2_test, ML_y_train_2, ML_y_test_2,
                ML_w_train_2, ML_w_test_2, 21, close=True, 
-              label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
-                title=('ML_600_360_'), saveas=('ML/600_360/'))
+              label=['ttZ','ggA_500_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_500_360_'), saveas=('ML/500_360/'))
     
+    ML_2_bkg_count, ML_2_sig_count = f.ProbLimitCount(ML_pred_2_train, ML_pred_2_test, ML_y_train_2, ML_y_test_2, 
+               ML_w_train_2, ML_w_test_2, 21, close=True, 
+              label=['ttZ','ggA_500_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_500_360'), saveas=('ML/500_360/'))
+
     ###########
-    # 500_360 #
+    # 600_360 #
     ###########
     
     ### ML model 3 ###
@@ -1458,7 +1652,7 @@ if doML:
     # Prepare data for ML
     (ML_model_3_data, ML_model_3_data_norm, ML_X_train_3, ML_y_train_3, ML_X_test_3, 
       ML_y_test_3, ML_w_train_3, ML_w_test_3, ML_w_norm_train_3, ML_y_binary_3, 
-      ML_N_train_3) = f.data_prep(ML_model_3, N_ttZ, N, weight, N_ggA_460_360, N_ggA_500_360)
+      ML_N_train_3) = f.data_prep(ML_model_3, N_ttZ, N, weight, N_ggA_500_360, N_ggA_600_360)
     
     model_length = len(ML_model_3)
     
@@ -1475,9 +1669,9 @@ if doML:
     extra_node = 12
     
     ### The model ###
-    ML_pred_3_train, ML_pred_3_test, ML_y_train_3, ML_y_test_3 = m.ML(
+    ML_pred_3_train, ML_pred_3_test, ML_y_train_3, ML_y_test_3, ML_w_train_3, ML_w_test_3 = m.ML(
         ML_X_train_3, ML_y_train_3, ML_X_test_3, ML_y_test_3, model_length, 
-        ML_w_norm_train_1, forceFit=ForceML3, close=True, type_tag = ['ML', '500_360'],
+        ML_w_train_3, ML_w_test_3, ML_w_norm_train_3, forceFit=ForceML3, close=True, type_tag = ['ML', '600_360'],
                  
                   # Epochs batch and lr
                   epochs = ML_epoch_3, batch = ML_batch_3, lr = ML_lr_3,
@@ -1492,52 +1686,212 @@ if doML:
                   input_node = input_node, mid_node = mid_node, extra_node = extra_node)
 
     f.ROC_Curve(ML_pred_3_train, ML_pred_3_test, ML_y_train_3, ML_y_test_3, close=True, 
-                title=('ML_500_360_'), saveas=('ML/500_360/'))
+                title=('ML_600_360_'), saveas=('ML/600_360/'))
     
     f.ProbHist(ML_pred_3_train, ML_pred_3_test, ML_y_train_3, ML_y_test_3, 
                ML_w_train_3, ML_w_test_3, 21, close=True, 
-              label=['ttZ','ggA_500_360'], xtitle="Probability", ytitle="Events", 
-                title=('ML_500_360_'), saveas=('ML/500_360/'))
+              label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_360_'), saveas=('ML/600_360/'))
+    
+    ML_3_bkg_count, ML_3_sig_count = f.ProbLimitCount(ML_pred_3_train, ML_pred_3_test, ML_y_train_3, ML_y_test_3, 
+               ML_w_train_3, ML_w_test_3, 21, close=True, 
+              label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_360'), saveas=('ML/600_360/'))
+    
+    ###########
+    # 600_400 #
+    ###########
+    
+    ### ML model 4 ###
+    ML_model_4 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr, lep_dr, top1_pt, top2_pt, met_pt, met_phi)
+    
+    # Prepare data for ML
+    (ML_model_4_data, ML_model_4_data_norm, ML_X_train_4, ML_y_train_4, ML_X_test_4, 
+      ML_y_test_4, ML_w_train_4, ML_w_test_4, ML_w_norm_train_4, ML_y_binary_4, 
+      ML_N_train_4) = f.data_prep(ML_model_4, N_ttZ, N, weight, N_ggA_600_360, N_ggA_600_400)
+    
+    model_length = len(ML_model_4)
+    
+    # Extract all X data for prediction
+    ML_all_4 = ML_model_4_data_norm[:][:,0:model_length]
+        
+    # Define the learning rate
+    ML_lr_4 = 0
+    ML_epoch_4 = 200
+    ML_batch_4 = 5
+    
+    input_node = 8#int(len(ML_X_train_4[0]))
+    mid_node = 8#int(input_node*4)
+    extra_node = 12
+    
+    ### The model ###
+    ML_pred_4_train, ML_pred_4_test, ML_y_train_4, ML_y_test_4, ML_w_train_4, ML_w_test_4 = m.ML(
+        ML_X_train_4, ML_y_train_4, ML_X_test_4, ML_y_test_4, model_length, 
+        ML_w_train_4, ML_w_test_4, ML_w_norm_train_4, forceFit=ForceML4, close=True, type_tag = ['ML', '600_400'],
+                 
+                  # Epochs batch and lr
+                  epochs = ML_epoch_4, batch = ML_batch_4, lr = ML_lr_4,
+                 
+                  # Early stopping
+                  doES=True, ESpat=40,
+                 
+                  # Learning rate reduction
+                  doRL=False, RLrate=0.1, RLpat=100,
+                 
+                  # Nodes
+                  input_node = input_node, mid_node = mid_node, extra_node = extra_node)
+
+    f.ROC_Curve(ML_pred_4_train, ML_pred_4_test, ML_y_train_4, ML_y_test_4, close=True, 
+                title=('ML_600_400_'), saveas=('ML/600_400/'))
+    
+    f.ProbHist(ML_pred_4_train, ML_pred_4_test, ML_y_train_4, ML_y_test_4, 
+               ML_w_train_4, ML_w_test_4, 21, close=True, 
+              label=['ttZ','ggA_600_400'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_400_'), saveas=('ML/600_400/'))
+    
+    ML_4_bkg_count, ML_4_sig_count = f.ProbLimitCount(ML_pred_4_train, ML_pred_4_test, ML_y_train_4, ML_y_test_4, 
+               ML_w_train_4, ML_w_test_4, 21, close=True, 
+              label=['ttZ','ggA_600_400'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_400'), saveas=('ML/600_400/'))
+    
+    ###########
+    # 600_500 #
+    ###########
+    
+    ### ML model 5 ###
+    ML_model_5 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr, lep_dr, top1_pt, top2_pt, met_pt, met_phi)
+    
+    # Prepare data for ML
+    (ML_model_5_data, ML_model_5_data_norm, ML_X_train_5, ML_y_train_5, ML_X_test_5, 
+      ML_y_test_5, ML_w_train_5, ML_w_test_5, ML_w_norm_train_5, ML_y_binary_5, 
+      ML_N_train_5) = f.data_prep(ML_model_5, N_ttZ, N, weight, N_ggA_600_400, N_ggA_600_500)
+    
+    model_length = len(ML_model_5)
+    
+    # Extract all X data for prediction
+    ML_all_5 = ML_model_5_data_norm[:][:,0:model_length]
+        
+    # Define the learning rate
+    ML_lr_5 = 0
+    ML_epoch_5 = 200
+    ML_batch_5 = 5
+    
+    input_node = 8#int(len(ML_X_train_5[0]))
+    mid_node = 8#int(input_node*5)
+    extra_node = 12
+    
+    ### The model ###
+    ML_pred_5_train, ML_pred_5_test, ML_y_train_5, ML_y_test_5, ML_w_train_5, ML_w_test_5 = m.ML(
+        ML_X_train_5, ML_y_train_5, ML_X_test_5, ML_y_test_5, model_length, 
+        ML_w_train_5, ML_w_test_5, ML_w_norm_train_5, forceFit=ForceML5, close=True, type_tag = ['ML', '600_500'],
+                 
+                  # Epochs batch and lr
+                  epochs = ML_epoch_5, batch = ML_batch_5, lr = ML_lr_5,
+                 
+                  # Early stopping
+                  doES=True, ESpat=50,
+                 
+                  # Learning rate reduction
+                  doRL=False, RLrate=0.1, RLpat=100,
+                 
+                  # Nodes
+                  input_node = input_node, mid_node = mid_node, extra_node = extra_node)
+
+    f.ROC_Curve(ML_pred_5_train, ML_pred_5_test, ML_y_train_5, ML_y_test_5, close=True, 
+                title=('ML_600_500_'), saveas=('ML/600_500/'))
+    
+    f.ProbHist(ML_pred_5_train, ML_pred_5_test, ML_y_train_5, ML_y_test_5, 
+               ML_w_train_5, ML_w_test_5, 21, close=True, 
+              label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_500_'), saveas=('ML/600_500/'))
+    
+    ML_5_bkg_count, ML_5_sig_count = f.ProbLimitCount(ML_pred_5_train, ML_pred_5_test, ML_y_train_5, ML_y_test_5, 
+               ML_w_train_5, ML_w_test_5, 21, close=True, 
+              label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
+                title=('ML_600_500'), saveas=('ML/600_500/'))
+    
+    #############
+    # 500_400_1 #
+    #############
+    
+    ### ML model 6 ###
+    ML_model_6 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr, lep_dr)
+    ML_model_6 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr, lep_dr, top1_pt, top2_pt, met_pt, met_phi)
+    
+    # Prepare data for ML
+    (ML_model_6_data, ML_model_6_data_norm, ML_X_train_6, ML_y_train_6, ML_X_test_6, 
+      ML_y_test_6, ML_w_train_6, ML_w_test_6, ML_w_norm_train_6, ML_y_binary_6, 
+      ML_N_train_6) = f.data_prep(ML_model_6, N_ttZ, N, weight, N_ggA_500_400, N_ggA_500_400_1)
+    
+    model_length = len(ML_model_6)
+    
+    # Extract all X data for prediction
+    ML_all_6 = ML_model_6_data_norm[:][:,0:model_length]
+        
+    # Define the learning rate
+    ML_lr_6 = 0
+    ML_epoch_6 = 200
+    ML_batch_6 = 5
+    
+    input_node = 8#int(len(ML_X_train_6[0]))
+    mid_node = 8#int(input_node*6)
+    extra_node = 12
+    
+    ### The model ###
+    ML_pred_6_train, ML_pred_6_test, ML_y_train_6, ML_y_test_6, ML_w_train_6, ML_w_test_6 = m.ML(
+        ML_X_train_6, ML_y_train_6, ML_X_test_6, ML_y_test_6, model_length, 
+        ML_w_train_6, ML_w_test_6, ML_w_norm_train_6, forceFit=ForceML6, close=True, type_tag = ['ML', '500_400_1'],
+                 
+                  # Epochs batch and lr
+                  epochs = ML_epoch_6, batch = ML_batch_6, lr = ML_lr_6,
+                 
+                  # Early stopping
+                  doES=True, ESpat=30,
+                 
+                  # Learning rate reduction
+                  doRL=False, RLrate=0.1, RLpat=100,
+                 
+                  # Nodes
+                  input_node = input_node, mid_node = mid_node, extra_node = extra_node)
+
+    f.ROC_Curve(ML_pred_6_train, ML_pred_6_test, ML_y_train_6, ML_y_test_6, close=True, 
+                title=('ML_500_400_1_'), saveas=('ML/500_400_1/'))
+    
+    f.ProbHist(ML_pred_6_train, ML_pred_6_test, ML_y_train_6, ML_y_test_6, 
+               ML_w_train_6, ML_w_test_6, 21, close=True, 
+              label=['ttZ','ggA_500_400_1'], xtitle="Probability", ytitle="Events", 
+                title=('ML_500_400_1_'), saveas=('ML/500_400_1/'))
+    
+    ML_6_bkg_count, ML_6_sig_count = f.ProbLimitCount(ML_pred_6_train, ML_pred_6_test, ML_y_train_6, ML_y_test_6, 
+               ML_w_train_6, ML_w_test_6, 21, close=True, 
+              label=['ttZ','ggA_500_400_1'], xtitle="Probability", ytitle="Events", 
+                title=('ML_500_400_1_'), saveas=('ML/500_400_1/'))
 
 ##################
 #  DEEP NETWORK  #
 ##################
 
-    # All DL variables, also consider pt instead of four mom
-
-    #               lep1_four_mom[:,0], lep1_four_mom[:,1], lep1_four_mom[:,2], lep1_four_mom[:,3],
-    #               lep2_four_mom[:,0], lep2_four_mom[:,1], lep2_four_mom[:,2], lep2_four_mom[:,3],
-    #               lep3_four_mom[:,0], lep3_four_mom[:,1], lep3_four_mom[:,2], lep3_four_mom[:,3],
-                  
-    #               jet1_four_mom[:,0], jet1_four_mom[:,1], jet1_four_mom[:,2], jet1_four_mom[:,3],
-    #               jet2_four_mom[:,0], jet2_four_mom[:,1], jet2_four_mom[:,2], jet2_four_mom[:,3],
-                  
-    #               bjet1_four_mom[:,0], bjet1_four_mom[:,1], bjet1_four_mom[:,2], bjet1_four_mom[:,3],
-    #               bjet2_four_mom[:,0], bjet2_four_mom[:,1], bjet2_four_mom[:,2], bjet2_four_mom[:,3],
-                  
-    #               top1_four_mom[:,0], top1_four_mom[:,1], top1_four_mom[:,2], top1_four_mom[:,3],
-    #               top2_four_mom[:,0], top2_four_mom[:,1], top2_four_mom[:,2], top2_four_mom[:,3],
-                  
-    #               Z_four_mom[:,0], Z_four_mom[:,1], Z_four_mom[:,2], Z_four_mom[:,3], 
-                  
-    #               delta_m, Z_pt, H_pt, top_dr)
-
 doDL = True
 
-# 600_500
+# 460_360
 ForceDL1 = False
 
-# 500_400
+# 500_360
 ForceDL2 = False
-ForceDL2_split = False
-
-# 500_400_1 - The extra 500_400 data
-ForceDL4 = False
 
 # 600_360
+ForceDL3 = False
+
+# 600_400
+ForceDL4 = False
+
+# 600_500
 ForceDL5 = False
 
+# 500_400_1
+ForceDL6 = False
 
+# Optimisations
 DL_Opt_1 = False
 DL_Opt_2 = False
 DL_Opt_5 = False
@@ -1545,7 +1899,7 @@ DL_Opt_5 = False
 if doDL:
     
     ###########
-    # 600_500 #
+    # 460_360 #
     ###########
 
     
@@ -1560,7 +1914,7 @@ if doDL:
     # Prepare data for DL
     (DL_model_1_data, DL_model_1_data_norm, DL_X_train_1, DL_y_train_1, DL_X_test_1, 
      DL_y_test_1, DL_w_train_1, DL_w_test_1, DL_w_norm_train_1, DL_y_binary_1, 
-     DL_N_train_1) = f.data_prep(DL_model_1, N_ttZ, N, weight, N_ggA_600_400, N_ggA_600_500)
+     DL_N_train_1) = f.data_prep(DL_model_1, N_ttZ, N, weight, N_ttWp, N_ggA_460_360)
 
     model_length = len(DL_model_1)
     
@@ -1577,9 +1931,9 @@ if doDL:
     extra_node = 12#int(input_node*2)*(3/2)
     
     ### The model ###
-    DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1 = m.ML(
+    DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1, DL_w_train_1, DL_w_test_1 = m.ML(
         DL_X_train_1, DL_y_train_1, DL_X_test_1, DL_y_test_1, model_length, 
-        DL_w_norm_train_1, forceFit=ForceDL1, close=True, type_tag = ['DL', '600_500'],
+        DL_w_train_1, DL_w_test_1, DL_w_norm_train_1, forceFit=ForceDL1, close=True, type_tag = ['DL', '460_360'],
                  
                  # Epochs batch and lr
                  epochs = DL_epoch_1, batch = DL_batch_1, lr = DL_lr_1,
@@ -1595,17 +1949,17 @@ if doDL:
                  )
 
     f.ROC_Curve(DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1, close=True, 
-                title=('DL_600_500'), saveas=('DL/600_500/'))
+                title=('DL_460_360'), saveas=('DL/460_360/'))
     
     f.ProbHist(DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1, 
                DL_w_train_1, DL_w_test_1, 21, close=True, 
-             label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
-                title=('DL_600_500_'), saveas=('DL/600_500/'))
+             label=['ttZ','ggA_460_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_460_360_'), saveas=('DL/460_360/'))
     
-    DL_1_bkg_count, DL_1_sig_count = f.ProbHist(DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1,
-            DL_w_train_1, DL_w_test_1, 21, close=True, 
-             label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
-                title=('DL_600_500_'), saveas=('DL/600_500/'), shaped=False)
+    DL_1_bkg_count, DL_1_sig_count = f.ProbLimitCount(DL_pred_1_train, DL_pred_1_test, DL_y_train_1, DL_y_test_1, 
+               DL_w_train_1, DL_w_test_1, 21, close=True, 
+             label=['ttZ','ggA_460_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_460_360_'), saveas=('DL/460_360/'))
 
     # Run optimisation if enabled
     if DL_Opt_1:
@@ -1626,297 +1980,531 @@ if doDL:
            input_node=input_node, mid_node=mid_node,
            
            type_tag = ['DL', '600_500'])
-        
-    ###########    
-    # 500_400 #
-    ###########
-    
-    DL_model_2 = (lep1_pt, 
-                  lep2_pt, 
-                  
-                  jet1_pt,
-                  jet2_pt,
-                  
-                  met_pt,
-                  met_phi
-                  )
 
+    ###########
+    # 500_360 #
+    ###########
+
+    DL_model_2 = (lep1_four_mom[:,0], lep1_pt, lep1_four_mom[:,3],
+                  lep2_four_mom[:,0], lep2_pt, lep2_four_mom[:,3],
+                  
+                  jet1_four_mom[:,0], jet1_pt,  jet1_four_mom[:,3],
+                  jet2_four_mom[:,0], jet2_pt,  jet2_four_mom[:,3],
+                  
+                  met_pt, met_phi)
+    
     # Prepare data for DL
     (DL_model_2_data, DL_model_2_data_norm, DL_X_train_2, DL_y_train_2, DL_X_test_2, 
      DL_y_test_2, DL_w_train_2, DL_w_test_2, DL_w_norm_train_2, DL_y_binary_2, 
-     DL_N_train_2) = f.data_prep(DL_model_2, N_ttZ, N, weight, N_ggA_600_500, N_ggA_500_400)
-    
+     DL_N_train_2) = f.data_prep(DL_model_2, N_ttZ, N, weight, N_ggA_460_360, N_ggA_500_360)
+
     model_length = len(DL_model_2)
     
     # Extract all X data for prediction
     DL_all_2 = DL_model_2_data_norm[:][:,0:model_length]
     
     # Define the learning rate
-    DL_lr_2 = 0
-    DL_epoch_2 = 200
+    DL_lr_2 = 0.0001
+    DL_epoch_2 = 300
     DL_batch_2 = 5
     
-    input_node = 8# int(len(DL_X_train_2[0]))
-    mid_node = 8#int(len(DL_X_train_2[0])*2)
-    extra_node = 12#int(len(DL_X_train_2[0])*(3/2))
+    input_node = 8#len(DL_X_train_2[0])
+    mid_node = 8#int(input_node*2)*(4/3)
+    extra_node = 12#int(input_node*2)*(3/2)
     
     ### The model ###
-    DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2 = m.ML(
+    DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2, DL_w_train_2, DL_w_test_2 = m.ML(
         DL_X_train_2, DL_y_train_2, DL_X_test_2, DL_y_test_2, model_length, 
-        DL_w_norm_train_2, forceFit=ForceDL2, close=True, type_tag = ['DL', '500_400'],
+        DL_w_train_2, DL_w_test_2, DL_w_norm_train_2, forceFit=ForceDL2, close=True, type_tag = ['DL', '500_360'],
                  
                  # Epochs batch and lr
                  epochs = DL_epoch_2, batch = DL_batch_2, lr = DL_lr_2,
                  
                  # Early stopping
-                 doES=True, ESpat=30,
+                 doES=True, ESpat=35,
                  
                  # Learning rate reduction
-                 doRL=False, RLrate=0.5, RLpat=15,
+                 doRL=False, RLrate=0.2, RLpat=20,
                  
                  # Nodes
-                 input_node = input_node, mid_node = mid_node, extra_node=extra_node
+                 input_node = input_node, mid_node = mid_node, extra_node = extra_node
                  )
 
     f.ROC_Curve(DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2, close=True, 
-                title=('DL_500_400'), saveas=('DL/500_400/'))
+                title=('DL_500_360'), saveas=('DL/500_360/'))
     
     f.ProbHist(DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2, 
                DL_w_train_2, DL_w_test_2, 21, close=True, 
-             label=['ttZ','ggA_500_400'], xtitle="Probability", ytitle="Events", 
-                title=('DL_500_400_'), saveas=('DL/500_400/'))
+             label=['ttZ','ggA_500_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_500_360_'), saveas=('DL/500_360/'))
     
-    # Run optimisation if enabled
-    if DL_Opt_2:
-        
-        # input_node = np.array([input_node*(1/2), input_node*(2/3), input_node, input_node*(4/3), input_node*(3/2)])
-        # mid_node = np.array([mid_node*(1/2), mid_node*(2/3), mid_node, mid_node*(4/3), mid_node*(3/2)])
-        
-        input_node = np.array([8, int(len(DL_X_train_2[0]))])
-        mid_node = np.array([8, int(len(DL_X_train_2[0])),int(len(DL_X_train_2[0])*2)])
-        extra_node = np.array([12, int(len(DL_X_train_2[0])*2), int(len(DL_X_train_2[0])*3)])
-        
-        DL_epoch_2 = np.array([250])
-        DL_batch_2 = np.array([15])
-        DL_lr_2 = np.array([0, 0.0001])
-        
-        m.ML_opt(DL_X_train_2, DL_y_train_2, DL_X_test_2, DL_y_test_2, model_length, N_arr, weight, 
-           DL_epoch_2, DL_batch_2, DL_lr_2, 
-           doES=True, ESpat=35,
-           doRL=False, RLrate=0, RLpat=0,
-           input_node=input_node, mid_node=mid_node, extra_node = extra_node,
-           
-           type_tag = ['DL', '500_400'])
-        
+    DL_2_bkg_count, DL_2_sig_count = f.ProbLimitCount(DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2, 
+               DL_w_train_2, DL_w_test_2, 21, close=True, 
+             label=['ttZ','ggA_500_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_500_360_'), saveas=('DL/500_360/'))
 
+    ###########
+    # 600_360 #
+    ###########
 
-    # # Test data model 
-    # # i.e. inverting the test/training data in this function
-    # DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2 = m.ML(DL_X_test_2, DL_y_test_2, 
-    #               DL_X_train_2, DL_y_train_2, model_length,
-    #               DL_w_norm_train_2, forceFit=ForceDL2_split, close=True, type_tag = ['DL', '500_400_Split'],
-                 
-    #               # Epochs batch and lr
-    #               epochs = DL_epoch_2, batch = DL_batch_2, lr = DL_lr_2,
-                 
-    #               # Early stopping
-    #               doES=True, ESpat=30,
-                 
-    #               # Learning rate reduction
-    #               doRL=False, RLrate=0.5, RLpat=8,
-                 
-    #               # Nodes
-    #               input_node = input_node, mid_node = mid_node
-    #               )
     
-    # f.ROC_Curve(DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2, close=True, 
-    #             title=('DL_500_400_Split_'), saveas=('DL/500_400_Split/'))
+    DL_model_3 = (lep1_four_mom[:,0], lep1_pt, lep1_four_mom[:,3],
+                  lep2_four_mom[:,0], lep2_pt, lep2_four_mom[:,3],
+                  
+                  jet1_four_mom[:,0], jet1_pt,  jet1_four_mom[:,3],
+                  jet2_four_mom[:,0], jet2_pt,  jet2_four_mom[:,3],
+                  
+                  met_pt, met_phi)
     
-    # f.ProbHist(DL_pred_2_train, DL_pred_2_test, DL_y_train_2, DL_y_test_2,
-    #            DL_w_train_2, DL_w_test_2, 21, close=True, 
-    #           label=['ttZ','ggA_500_400'], xtitle="Probability", ytitle="Events", 
-    #             title=('DL_500_400_Split_'), saveas=('DL/500_400_Split/'))
-    
-    #############    
-    # 500_400_1 #
-    #############
-     
-    DL_model_4 = (lep1_pt, 
-              lep2_pt, 
-              
-              jet1_pt,
-              jet2_pt,
-              
-              met_pt,
-              met_phi
-              )
+    # Prepare data for DL
+    (DL_model_3_data, DL_model_3_data_norm, DL_X_train_3, DL_y_train_3, DL_X_test_3, 
+     DL_y_test_3, DL_w_train_3, DL_w_test_3, DL_w_norm_train_3, DL_y_binary_3, 
+     DL_N_train_3) = f.data_prep(DL_model_3, N_ttZ, N, weight, N_ggA_500_360, N_ggA_600_360)
 
+    model_length = len(DL_model_3)
+    
+    # Extract all X data for prediction
+    DL_all_3 = DL_model_3_data_norm[:][:,0:model_length]
+    
+    # Define the learning rate
+    DL_lr_3 = 0.0001
+    DL_epoch_3 = 300
+    DL_batch_3 = 5
+    
+    input_node = 8#len(DL_X_train_3[0])
+    mid_node = 8#int(input_node*2)*(4/3)
+    extra_node = 12#int(input_node*2)*(3/2)
+    
+    ### The model ###
+    DL_pred_3_train, DL_pred_3_test, DL_y_train_3, DL_y_test_3, DL_w_train_3, DL_w_test_3 = m.ML(
+        DL_X_train_3, DL_y_train_3, DL_X_test_3, DL_y_test_3, model_length, 
+        DL_w_train_3, DL_w_test_3, DL_w_norm_train_3, forceFit=ForceDL3, close=True, type_tag = ['DL', '600_360'],
+                 
+                 # Epochs batch and lr
+                 epochs = DL_epoch_3, batch = DL_batch_3, lr = DL_lr_3,
+                 
+                 # Early stopping
+                 doES=True, ESpat=35,
+                 
+                 # Learning rate reduction
+                 doRL=False, RLrate=0.1, RLpat=20,
+                 
+                 # Nodes
+                 input_node = input_node, mid_node = mid_node, extra_node = extra_node
+                 )
+
+    f.ROC_Curve(DL_pred_3_train, DL_pred_3_test, DL_y_train_3, DL_y_test_3, close=True, 
+                title=('DL_600_360'), saveas=('DL/600_360/'))
+    
+    f.ProbHist(DL_pred_3_train, DL_pred_3_test, DL_y_train_3, DL_y_test_3, 
+               DL_w_train_3, DL_w_test_3, 21, close=True, 
+             label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_360_'), saveas=('DL/600_360/'))
+    
+    DL_3_bkg_count, DL_3_sig_count = f.ProbLimitCount(DL_pred_3_train, DL_pred_3_test, DL_y_train_3, DL_y_test_3, 
+               DL_w_train_3, DL_w_test_3, 21, close=True, 
+             label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_360_'), saveas=('DL/600_360/'))
+    
+    ###########
+    # 600_400 #
+    ###########
+
+    DL_model_4 = (lep1_four_mom[:,0], lep1_pt, lep1_four_mom[:,3],
+                  lep2_four_mom[:,0], lep2_pt, lep2_four_mom[:,3],
+                  
+                  jet1_four_mom[:,0], jet1_pt,  jet1_four_mom[:,3],
+                  jet2_four_mom[:,0], jet2_pt,  jet2_four_mom[:,3],
+                  
+                  met_pt, met_phi)
+    
     # Prepare data for DL
     (DL_model_4_data, DL_model_4_data_norm, DL_X_train_4, DL_y_train_4, DL_X_test_4, 
      DL_y_test_4, DL_w_train_4, DL_w_test_4, DL_w_norm_train_4, DL_y_binary_4, 
-     DL_N_train_4) = f.data_prep(DL_model_4, N_ttZ, N, weight, N_ggA_500_400, N_ggA_500_400_1,
-                                                             cut_percentage=0)
-    
+     DL_N_train_4) = f.data_prep(DL_model_4, N_ttZ, N, weight, N_ggA_600_360, N_ggA_600_400)
+
     model_length = len(DL_model_4)
     
     # Extract all X data for prediction
     DL_all_4 = DL_model_4_data_norm[:][:,0:model_length]
     
     # Define the learning rate
-    DL_lr_4 = 0
-    DL_epoch_4 = 200
+    DL_lr_4 = 0.0001
+    DL_epoch_4 = 300
     DL_batch_4 = 5
     
-    input_node = 8# int(len(DL_X_train_2[0]))
-    mid_node = 8#int(len(DL_X_train_2[0])*2)
-    extra_node = 12#int(len(DL_X_train_2[0])*(3/2))
+    input_node = 8#len(DL_X_train_4[0])
+    mid_node = 8#int(input_node*2)*(4/3)
+    extra_node = 12#int(input_node*2)*(3/2)
     
     ### The model ###
-    DL_pred_4_train, DL_pred_4_test, DL_y_train_4, DL_y_test_4 = m.ML(
+    DL_pred_4_train, DL_pred_4_test, DL_y_train_4, DL_y_test_4, DL_w_train_4, DL_w_test_4 = m.ML(
         DL_X_train_4, DL_y_train_4, DL_X_test_4, DL_y_test_4, model_length, 
-        DL_w_norm_train_4, forceFit=ForceDL4, close=True, type_tag = ['DL', '500_400_1'],
+        DL_w_train_4, DL_w_test_4, DL_w_norm_train_4, forceFit=ForceDL4, close=True, type_tag = ['DL', '600_400'],
                  
                  # Epochs batch and lr
                  epochs = DL_epoch_4, batch = DL_batch_4, lr = DL_lr_4,
                  
                  # Early stopping
-                 doES=True, ESpat=30,
+                 doES=True, ESpat=35,
                  
                  # Learning rate reduction
-                 doRL=False, RLrate=0.5, RLpat=15,
+                 doRL=False, RLrate=0.1, RLpat=20,
                  
                  # Nodes
-                 input_node = input_node, mid_node = mid_node, extra_node=extra_node
+                 input_node = input_node, mid_node = mid_node, extra_node = extra_node
                  )
 
     f.ROC_Curve(DL_pred_4_train, DL_pred_4_test, DL_y_train_4, DL_y_test_4, close=True, 
-                title=('DL_500_400_1'), saveas=('DL/500_400_1/'))
+                title=('DL_600_400'), saveas=('DL/600_400/'))
     
     f.ProbHist(DL_pred_4_train, DL_pred_4_test, DL_y_train_4, DL_y_test_4, 
                DL_w_train_4, DL_w_test_4, 21, close=True, 
-             label=['ttZ','ggA_500_400_1'], xtitle="Probability", ytitle="Events", 
-                title=('DL_500_400_1_'), saveas=('DL/500_400_1/'))
-
+             label=['ttZ','ggA_600_400'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_400_'), saveas=('DL/600_400/'))
+    
+    DL_4_bkg_count, DL_4_sig_count = f.ProbLimitCount(DL_pred_4_train, DL_pred_4_test, DL_y_train_4, DL_y_test_4, 
+               DL_w_train_4, DL_w_test_4, 21, close=True, 
+             label=['ttZ','ggA_600_400'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_400_'), saveas=('DL/600_400/'))
+    
     ###########
-    # 600_360 #
+    # 600_500 #
     ###########
 
-    DL_model_5 = (lep1_pt, 
-              lep2_pt, 
-              
-              jet1_pt,
-              jet2_pt,
-              
-              met_pt,
-              met_phi
-              )
-
+    DL_model_5 = (lep1_four_mom[:,0], lep1_pt, lep1_four_mom[:,3],
+                  lep2_four_mom[:,0], lep2_pt, lep2_four_mom[:,3],
+                  
+                  jet1_four_mom[:,0], jet1_pt,  jet1_four_mom[:,3],
+                  jet2_four_mom[:,0], jet2_pt,  jet2_four_mom[:,3],
+                  
+                  met_pt, met_phi)
+    
     # Prepare data for DL
     (DL_model_5_data, DL_model_5_data_norm, DL_X_train_5, DL_y_train_5, DL_X_test_5, 
      DL_y_test_5, DL_w_train_5, DL_w_test_5, DL_w_norm_train_5, DL_y_binary_5, 
-     DL_N_train_5) = f.data_prep(DL_model_5, N_ttZ, N, weight, N_ggA_500_360, N_ggA_600_360)
-    
+     DL_N_train_5) = f.data_prep(DL_model_5, N_ttZ, N, weight, N_ggA_600_400, N_ggA_600_500)
+
     model_length = len(DL_model_5)
     
     # Extract all X data for prediction
     DL_all_5 = DL_model_5_data_norm[:][:,0:model_length]
     
     # Define the learning rate
-    DL_lr_5 = 0
-    DL_epoch_5 = 200
+    DL_lr_5 = 0.0001
+    DL_epoch_5 = 300
     DL_batch_5 = 5
+    
+    input_node = 8#len(DL_X_train_5[0])
+    mid_node = 8#int(input_node*2)*(4/3)
+    extra_node = 12#int(input_node*2)*(3/2)
+    
+    ### The model ###
+    DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, DL_w_train_5, DL_w_test_5 = m.ML(
+        DL_X_train_5, DL_y_train_5, DL_X_test_5, DL_y_test_5, model_length, 
+        DL_w_train_5, DL_w_test_5, DL_w_norm_train_5, forceFit=ForceDL5, close=True, type_tag = ['DL', '600_500'],
+                 
+                 # Epochs batch and lr
+                 epochs = DL_epoch_5, batch = DL_batch_5, lr = DL_lr_5,
+                 
+                 # Early stopping
+                 doES=True, ESpat=35,
+                 
+                 # Learning rate reduction
+                 doRL=False, RLrate=0.1, RLpat=20,
+                 
+                 # Nodes
+                 input_node = input_node, mid_node = mid_node, extra_node = extra_node
+                 )
+
+    f.ROC_Curve(DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, close=True, 
+                title=('DL_600_500'), saveas=('DL/600_500/'))
+    
+    f.ProbHist(DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, 
+               DL_w_train_5, DL_w_test_5, 21, close=True, 
+             label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_500_'), saveas=('DL/600_500/'))
+    
+    DL_5_bkg_count, DL_5_sig_count = f.ProbLimitCount(DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, 
+               DL_w_train_5, DL_w_test_5, 21, close=True, 
+             label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
+                title=('DL_600_500_'), saveas=('DL/600_500/'))
+        
+    #############    
+    # 500_400_1 #
+    #############
+     
+    DL_model_6 = (lep1_pt,
+                  lep2_pt,
+                  lep3_pt, 
+              
+                    jet1_pt,
+                    jet2_pt,
+                    
+                    bjet1_pt,
+                    bjet2_pt,
+              
+                    met_pt
+                    )
+    
+    # DL_model_6 = (lep1_four_mom[:,0], lep1_pt, lep1_four_mom[:,3],
+    #               lep2_four_mom[:,0], lep2_pt, lep2_four_mom[:,3],
+                  
+    #               jet1_four_mom[:,0], jet1_pt,  jet1_four_mom[:,3],
+    #               jet2_four_mom[:,0], jet2_pt,  jet2_four_mom[:,3],
+                  
+    #               met_pt)
+
+    # Prepare data for DL
+    (DL_model_6_data, DL_model_6_data_norm, DL_X_train_6, DL_y_train_6, DL_X_test_6, 
+     DL_y_test_6, DL_w_train_6, DL_w_test_6, DL_w_norm_train_6, DL_y_binary_6, 
+     DL_N_train_6) = f.data_prep(DL_model_6, N_ttZ, N, weight, N_ggA_500_400, N_ggA_500_400_1,
+                                                             cut_percent=0)
+    
+    model_length = len(DL_model_6)
+    
+    # Extract all X data for prediction
+    DL_all_6 = DL_model_6_data_norm[:][:,0:model_length]
+    
+    # Define the learning rate
+    DL_lr_6 = 0
+    DL_epoch_6 = 200
+    DL_batch_6 = 5
     
     input_node = 8# int(len(DL_X_train_2[0]))
     mid_node = 8#int(len(DL_X_train_2[0])*2)
     extra_node = 12#int(len(DL_X_train_2[0])*(3/2))
     
     ### The model ###
-    DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5 = m.ML(
-        DL_X_train_5, DL_y_train_5, DL_X_test_5, DL_y_test_5, model_length, 
-        DL_w_norm_train_5,forceFit=ForceDL5, close=True, type_tag = ['DL', '600_360'],
+    DL_pred_6_train, DL_pred_6_test, DL_y_train_6, DL_y_test_6, DL_w_train_6, DL_w_test_6 = m.ML(
+        DL_X_train_6, DL_y_train_6, DL_X_test_6, DL_y_test_6, model_length, 
+        DL_w_train_6, DL_w_test_6, DL_w_norm_train_6, forceFit=ForceDL6, close=True, type_tag = ['DL', '500_400_1'],
                  
                  # Epochs batch and lr
-                 epochs = DL_epoch_5, batch = DL_batch_5, lr = DL_lr_5,
+                 epochs = DL_epoch_6, batch = DL_batch_6, lr = DL_lr_6,
                  
                  # Early stopping
                  doES=True, ESpat=30,
                  
                  # Learning rate reduction
-                 doRL=False, RLrate=0.5, RLpat=15,
+                 doRL=False, RLrate=0.6, RLpat=16,
                  
                  # Nodes
                  input_node = input_node, mid_node = mid_node, extra_node=extra_node
                  )
 
-    f.ROC_Curve(DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, close=True, 
-                title=('DL_600_360'), saveas=('DL/600_360/'))
+    f.ROC_Curve(DL_pred_6_train, DL_pred_6_test, DL_y_train_6, DL_y_test_6, close=True, 
+                title=('DL_500_400_1'), saveas=('DL/500_400_1/'))
     
-    f.ProbHist(DL_pred_5_train, DL_pred_5_test, DL_y_train_5, DL_y_test_5, 
-               DL_w_train_5, DL_w_test_5, 21, close=True, 
-             label=['ttZ','ggA_600_360'], xtitle="Probability", ytitle="Events", 
-                title=('DL_600_360_'), saveas=('DL/600_360/'))
+    f.ProbHist(DL_pred_6_train, DL_pred_6_test, DL_y_train_6, DL_y_test_6, 
+               DL_w_train_6, DL_w_test_6, 21, close=True, 
+             label=['ttZ','ggA_500_400_1'], xtitle="Probability", ytitle="Events", 
+                title=('DL_500_400_1_'), saveas=('DL/500_400_1/'))
     
-    # Run optimisation if enabled
-    if DL_Opt_5:
-        
-        # input_node = np.array([input_node*(1/2), input_node*(2/3), input_node, input_node*(4/3), input_node*(3/2)])
-        # mid_node = np.array([mid_node*(1/2), mid_node*(2/3), mid_node, mid_node*(4/3), mid_node*(3/2)])
-        
-        input_node = np.array([8, int(len(DL_X_train_2[0]))])
-        mid_node = np.array([8, int(len(DL_X_train_2[0])),int(len(DL_X_train_2[0])*2)])
-        extra_node = np.array([12, int(len(DL_X_train_2[0])*2)])
-        
-        DL_epoch_5 = np.array([250])
-        DL_batch_5 = np.array([5, 10, 15])
-        DL_lr_5 = np.array([0, 0.01, 0.0001])
-        
-        m.ML_opt(DL_X_train_5, DL_y_train_5, DL_X_test_5, DL_y_test_5, model_length, N_arr, weight, 
-           DL_epoch_5, DL_batch_5, DL_lr_5, 
-           doES=True, ESpat=35,
-           doRL=False, RLrate=0, RLpat=0,
-           input_node=input_node, mid_node=mid_node, extra_node = extra_node,
-           
-           type_tag = ['DL', '600_360'])
+    DL_6_bkg_count, DL_6_sig_count = f.ProbLimitCount(DL_pred_6_train, DL_pred_6_test, DL_y_train_6, DL_y_test_6, 
+               DL_w_train_6, DL_w_test_6, 21, close=True, 
+             label=['ttZ','ggA_500_400_1'], xtitle="Probability", ytitle="Events", 
+                title=('DL_500_400_1_'), saveas=('DL/500_400_1/'))
 
 
 ######################
 #  LIMIT ESTIMATION  #
 ######################
 
+doLimits = True
 
+### Ordering of signal count returned from plots 
+# 0 - 460_360
+# 1 - 500_360
+# 2 - 600_360
+# 3 - 600_400
+# 4 - 600_500
+# 5 - 500_400  - NOT USED
+# 6 - 500_400_1
 
-# if doSVM:
-#     svm_sig_count = svm_sig_count*(300/139)
-#     svm_bkg_count = svm_bkg_count*(300/139)
-#     limit_svm = f.getLimit(svm_sig_count, svm_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
-#     print('SVM limit is: ', limit_svm)
+# A bar to separate prints
+textbar = '----------------------------------------------'
 
-
-if doPlots:
-    delta_m_sig_count = delta_m_sig_count*(300/139)
-    delta_m_bkg_count = delta_m_bkg_count*(300/139)
+# If plots aren't enabled load the counts for limit calculations
+if not doPlots:
+    delta_m_bkg_count = np.load('Arrays/delta_m_limit_bkg.npy', allow_pickle=True)
+    delta_m_sig_count = np.load('Arrays/delta_m_limit_sig.npy', allow_pickle=True)
     
-    limit_delta_m = f.getLimit(delta_m_sig_count, delta_m_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
-    print('delta m limit (for 600_360) is: ', limit_delta_m)
-
-if doDL:
-    # Adjust to 300 fb^-1
-    #!!! Needs to be weighted in future
-    DL_1_sig_count = DL_1_sig_count*(300/139)
-    DL_1_bkg_count = DL_1_bkg_count*(300/139)
+    Z_pt_bkg_count = np.load('Arrays/Z_limit_bkg.npy', allow_pickle=True)
+    Z_pt_sig_count = np.load('Arrays/Z_limit_sig.npy', allow_pickle=True)
     
-    limit_DL_1 = f.getLimit(DL_1_sig_count, DL_1_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
-    print('DL 600_500 limit is: ', limit_DL_1)
+    print('load test')
 
 
-
-# !!! DL limit needs fixing, weights in the function is broken
-
-# DL_bkg_count, DL_sig_count = f.LimitCount(DL_y_binary_1, DL_pred_1, 21, weight, N_arr, label=['ttZ','ggA_600_500'], xlim=[0,1])
-
-# limit_DL = f.getLimit(DL_sig_count, DL_bkg_count, confidenceLevel=0.95, method=0, err=0.05)
-# print('DL limit is: ', limit_DL)
-
+if doLimits:
+    
+    print('\n' + textbar + '\nRegular Limits\n' + textbar)
+    
+    limit_460_360_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[0,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_460_360_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[0,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('460_360 delta m limit is: ', limit_460_360_delta_m)
+    print('460_360 Z_pt limit is: ', limit_460_360_Z_pt)
+    
+    limit_500_360_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[1,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_500_360_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[1,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('500_360 delta m limit is: ', limit_500_360_delta_m)
+    print('500_360 Z_pt limit is: ', limit_500_360_Z_pt)
+    
+    limit_600_360_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[2,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_600_360_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[2,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('600_360 delta m limit is: ', limit_600_360_delta_m)
+    print('600_360 Z_pt limit is: ', limit_600_360_Z_pt)
+    
+    limit_600_400_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[3,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_600_400_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[3,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('600_400 delta m limit is: ', limit_600_400_delta_m)
+    print('600_400 Z_pt limit is: ', limit_600_400_Z_pt)
+    
+    limit_600_500_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[4,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_600_500_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[4,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('600_500 delta m limit is: ', limit_600_500_delta_m)
+    print('600_500 Z_pt limit is: ', limit_600_500_Z_pt)
+    
+    limit_500_400_1_delta_m = f.getLimit(delta_m_bkg_count, delta_m_sig_count[6,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    limit_500_400_1_Z_pt = f.getLimit(Z_pt_bkg_count, Z_pt_sig_count[6,:], 
+                               confidenceLevel=0.95, method=0, err=0.05)
+    
+    print('500_400_1 delta m limit is: ', limit_500_400_1_delta_m)
+    print('500_400_1 Z_pt limit is: ', limit_500_400_1_Z_pt)
+    
+    
+    if doSVM:
+    
+        print('\n' + textbar + '\nML Limits\n' + textbar)
+        
+        limit_SVM_1 = f.getLimit(SVM_1_bkg_count, SVM_1_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('460_360 SVM limit is: ', limit_SVM_1)
+        
+        limit_SVM_2 = f.getLimit(SVM_2_bkg_count, SVM_2_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_360 SVM limit is: ', limit_SVM_2)
+        
+        limit_SVM_3 = f.getLimit(SVM_3_bkg_count, SVM_3_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_360 SVM limit is: ', limit_SVM_3)
+        
+        limit_SVM_4 = f.getLimit(SVM_4_bkg_count, SVM_4_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_400 SVM limit is: ', limit_SVM_4)
+        
+        limit_SVM_5 = f.getLimit(SVM_5_bkg_count, SVM_5_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_500 SVM limit is: ', limit_SVM_5)
+    
+        limit_SVM_6 = f.getLimit(SVM_6_bkg_count, SVM_6_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_400_1 SVM limit is: ', limit_SVM_6)
+    
+    if doML:
+        
+        print('\n' + textbar + '\nML Limits\n' + textbar)
+        
+        limit_ML_1 = f.getLimit(ML_1_bkg_count, ML_1_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('460_360 ML limit is: ', limit_ML_1)
+        
+        limit_ML_2 = f.getLimit(ML_2_bkg_count, ML_2_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_360 ML limit is: ', limit_ML_2)
+        
+        limit_ML_3 = f.getLimit(ML_3_bkg_count, ML_3_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_360 ML limit is: ', limit_ML_3)
+        
+        limit_ML_4 = f.getLimit(ML_4_bkg_count, ML_4_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_400 ML limit is: ', limit_ML_4)
+        
+        limit_ML_5 = f.getLimit(ML_5_bkg_count, ML_5_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_500 ML limit is: ', limit_ML_5)
+    
+        limit_ML_6 = f.getLimit(ML_6_bkg_count, ML_6_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_400_1 ML limit is: ', limit_ML_6)
+    
+    
+    if doDL:
+    
+        print('\n' + textbar + '\nDL Limits\n' + textbar)
+    
+        limit_DL_1 = f.getLimit(DL_1_bkg_count, DL_1_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('460_360 DL limit is: ', limit_DL_1)
+    
+        limit_DL_2 = f.getLimit(DL_2_bkg_count, DL_2_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_360 DL limit is: ', limit_DL_2)
+    
+        limit_DL_3 = f.getLimit(DL_3_bkg_count, DL_3_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_360 DL limit is: ', limit_DL_3)
+        
+        limit_DL_4 = f.getLimit(DL_4_bkg_count, DL_4_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_400 DL limit is: ', limit_DL_4)
+        
+        limit_DL_5 = f.getLimit(DL_5_bkg_count, DL_5_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('600_500 DL limit is: ', limit_DL_5)
+    
+        limit_DL_6 = f.getLimit(DL_6_bkg_count, DL_6_sig_count, confidenceLevel=0.95, method=0, err=0.05)
+        print('500_400_1 DL limit is: ', limit_DL_6)
+    
+    
+    if doML and doDL:
+        print('\n' + textbar + '\n460_360 Limits\n' + textbar)
+        print('delta_m: ',limit_460_360_delta_m)
+        print('Z_pt: ',limit_460_360_Z_pt)
+        print('SVM: ',limit_SVM_1)
+        print('ML: ',limit_ML_1)
+        print('DL: ',limit_DL_1)
+        
+        print('\n' + textbar + '\n500_360 Limits\n' + textbar)
+        print('delta_m: ',limit_500_360_delta_m)
+        print('Z_pt: ',limit_500_360_Z_pt)
+        print('SVM: ',limit_SVM_2)
+        print('ML: ',limit_ML_2)
+        print('DL: ',limit_DL_2)
+    
+        print('\n' + textbar + '\n600_360 Limits\n' + textbar)
+        print('delta_m: ',limit_600_360_delta_m)
+        print('Z_pt: ',limit_600_360_Z_pt)
+        print('SVM: ',limit_SVM_3)
+        print('ML: ',limit_ML_3)
+        print('DL: ',limit_DL_3)
+        
+        print('\n' + textbar + '\n600_400 Limits\n' + textbar)
+        print('delta_m: ',limit_600_400_delta_m)
+        print('Z_pt: ',limit_600_400_Z_pt)
+        print('SVM: ',limit_SVM_4)
+        print('ML: ',limit_ML_4)
+        print('DL: ',limit_DL_4)
+    
+        print('\n' + textbar + '\n600_500 Limits\n' + textbar)
+        print('delta_m: ',limit_600_500_delta_m)
+        print('Z_pt: ',limit_600_500_Z_pt)
+        print('SVM: ',limit_SVM_5)
+        print('ML: ',limit_ML_5)
+        print('DL: ',limit_DL_5)
+        
+        print('\n' + textbar + '\n500_400_1 Limits\n' + textbar)
+        print('delta_m: ',limit_500_400_1_delta_m)
+        print('Z_pt: ',limit_500_400_1_Z_pt)
+        print('SVM: ',limit_SVM_6)
+        print('ML: ',limit_ML_6)
+        print('DL: ',limit_DL_6)
 
 ###############
 ### Runtime ###
