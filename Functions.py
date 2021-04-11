@@ -88,8 +88,7 @@ def drangle(dphi, eta1, eta2):
     
     return drangle
 
-# Single histogram plot for the Z invariant #!!! Needs error bars and luminosity scaling
-def Hist(X, Nb, close, **kwargs):
+def Hist(X, weight, Nb, close, N_ttZ, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     
     # Definition of variables
@@ -128,16 +127,26 @@ def Hist(X, Nb, close, **kwargs):
     bins_plot = np.delete(bins,Nb-1)
     bins_centre = bins_plot + (width/2)
 
+    # Adjust the weights for the additional ttZ data
+    weight1 = 0.5*weight[0:N_ttZ]
+    weight2 = weight[N_ttZ:]
+    weight = np.concatenate((weight1,weight2))
+
     # Make the histogram
-    count,edge = np.histogram(X, bins=bins)
+    count,edge = np.histogram(X, bins=bins, weights=weight)
 
     # Plot the histogram
-    plt.hist(X, bins=bins)
+    plt.hist(X, bins=bins, weights=weight)
     
+    # Histogram for calculating the errors
+    error = np.sqrt((np.histogram(X, bins=bins, 
+                                              weights=weight*weight)[0]).astype(float))
     # Add error bars
-    error = np.sqrt(count)
     plt.errorbar(bins_centre, count, barsabove=True, ls='none', 
                               yerr=error, marker='+', color='red')
+
+    # Modify the ytitle to include the width
+    ytitle = (ytitle + " / {width:} GeV").format(width = int(width))
 
     # Plot customisation
     plt.title(title, fontsize=40)
@@ -150,7 +159,15 @@ def Hist(X, Nb, close, **kwargs):
     ax.grid(which='both', axis='x', alpha = 0.5)
     ax.grid(which='major', axis='y', alpha = 0.5)
     
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    
+    string = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$'.format(lumin=int(139)))
+    
+    # Add a text box
+    # fontweight='bold', 
+    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+            verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
+    
 
     plt.xlim(themin, themax)
     plt.xticks(fontsize=20)
@@ -544,10 +561,8 @@ Function to prepare x and y data for machine learning
 
 def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, train_percent=0.5, cut_percent=0):
     
-    # Cut some of the signal data to show whether or not the # of events is sufficient
-    cut = 1-cut_percent
-
-    sig_length = int((signal_end - signal_start)*cut)
+    # Length of the signal
+    sig_length = (signal_end - signal_start)
     
     # Test if the input discriminant is singular or packed into a tuple
     # Assign it to the 'all_variables' variable
@@ -597,6 +612,23 @@ def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, train_perce
     data = np.append(xdata,ydata, axis=1)
     data = np.append(data,wdata, axis=1)
     data = np.append(data,w_norm_data, axis=1)
+
+    # If cut percentage is non-zero randomly remove a percentage of events
+    if cut_percent != 0:
+        # Random number generator
+        rng = np.random.default_rng()
+        
+        #Amount of data to be cut
+        cut_amount = int(len(data)*cut_percent)
+        
+        # Generate random integers
+        rints = rng.choice(len(data), size=cut_amount, replace=False)
+
+        # Sort from high-low so no conflicts on removal
+        rints[::-1].sort()
+        
+        for i in range(cut_amount):
+            data = np.delete(data,rints[i],axis=0)
 
     # Shuffle the data
     np.random.shuffle(data)
@@ -705,6 +737,17 @@ def ROC_Curve(pred_train, pred_test, y_train, y_test, close, title, saveas, **kw
     auc_train = metrics.auc(fpr_train, tpr_train)
     auc_test = metrics.auc(fpr_test, tpr_test)
     
+    #!!! Testing errors
+    
+    # Error (defined as (FN+FP)/(P+N)), https://www.researchgate.net/figure/Sample-figure-title-Area-under-ROC-curve-AUC-Error-defined-as-FN-FP-P-N-and_fig4_26322950
+    
+    # N = len(y_all)
+    # err = np.sqrt((fpr_all*(1-fpr_all))/N)
+    # err_counter = 0
+    # for i in range(len(err)):
+    #     err_counter = np.sqrt(err_counter**2+err[i]**2)
+    # print(err_counter)
+        
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     plt.plot(fpr_all, tpr_all, label='All (area = {:.3f})'.format(auc_all), color='red')
     plt.plot(fpr_test, tpr_test, label='Test (area = {:.3f})'.format(auc_test), color='deepskyblue')
@@ -1437,5 +1480,47 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
     
     return lim
     
+def Line(sens, mH, label, close, **kwargs):
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
 
+    # Extract additonal arguments from kwargs
+    for i, j in kwargs.items():
+        if i == "xtitle":
+            xtitle = j
+        elif i=="ytitle":
+            ytitle = j
+        elif i=="title":
+            title = j
+        elif i=="saveas":
+            saveas = j
+
+    markers = ['rx','bx','gx','yx','mx']
+    linestyle= ['-',':','--','-.','-']
+
+    for i in range(len(sens)):
+        # Make the plot
+        plt.plot(mH,sens[i],markers[i],label=label[i],linestyle=linestyle[i])
+    
+    # Set x limits
+    mH_min = np.amin(mH)-25
+    mH_max = np.amax(mH)+25
+    plt.xlim(mH_min, mH_max)
+    
+    # Set y limits
+    sens_max = np.amax(sens)
+
+    # Titles and legend
+    plt.title(title, fontsize=40)
+    plt.xlabel(xtitle, fontsize=25)
+    plt.ylabel(ytitle, fontsize=25)
+    plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
+
+    # Save the figure to the relevant folder 
+    plt.savefig("Plots/Singular/"+saveas+".png")
+        
+    # Close if close is set true
+    if close: 
+        plt.close()
+    else:
+        plt.show() 
 
