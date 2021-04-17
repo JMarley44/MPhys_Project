@@ -39,7 +39,8 @@ def SVM(X_train, y_train, X_test, C, gamma, tol, tag, ForceModel):
             prob_train = clf.predict_proba(X_train)
             prob_test = clf.predict_proba(X_test)
         except:
-            clf = svm.SVC(C = 0.01, gamma='auto', kernel='rbf', probability=True, cache_size=800, tol = 1E0) # Cache_size is memory usage
+            clf = svm.SVC(C = C, gamma=gamma, kernel='rbf', probability=True, cache_size=800, 
+                          tol = tol, break_ties=True, decision_function_shape = 'ovr') # Cache_size is memory usage
             clf.fit(X_train, y_train)
             dump(clf, svm_file)
             print('Trained SVM ' + tag)

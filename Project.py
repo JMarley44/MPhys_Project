@@ -64,6 +64,10 @@ try:
     lep2_pt = np.load('Arrays/lep2_pt.npy', allow_pickle=True)
     lep3_pt = np.load('Arrays/lep3_pt.npy', allow_pickle=True)
     
+    lep1_eta = np.load('Arrays/lep1_eta.npy', allow_pickle=True)
+    lep2_eta = np.load('Arrays/lep2_eta.npy', allow_pickle=True)
+    lep3_eta = np.load('Arrays/lep3_eta.npy', allow_pickle=True)
+    
     lep1_phi = np.load('Arrays/lep1_phi.npy', allow_pickle=True)
     lep2_phi = np.load('Arrays/lep2_phi.npy', allow_pickle=True)
     lep3_phi = np.load('Arrays/lep3_phi.npy', allow_pickle=True)
@@ -94,6 +98,9 @@ try:
     bjet1_pt = np.load('Arrays/bjet1_pt.npy', allow_pickle=True)
     bjet2_pt = np.load('Arrays/bjet2_pt.npy', allow_pickle=True)
     
+    bjet1_eta = np.load('Arrays/bjet1_eta.npy', allow_pickle=True)
+    bjet2_eta = np.load('Arrays/bjet2_eta.npy', allow_pickle=True)
+    
     bjet1_phi = np.load('Arrays/bjet1_phi.npy', allow_pickle=True)
     bjet2_phi = np.load('Arrays/bjet2_phi.npy', allow_pickle=True)
     
@@ -103,6 +110,10 @@ try:
 
     top1_pt = np.load('Arrays/top1_pt.npy', allow_pickle=True)
     top2_pt = np.load('Arrays/top2_pt.npy', allow_pickle=True)
+    
+    top1_eta = np.load('Arrays/top1_eta.npy', allow_pickle=True)
+    top2_eta = np.load('Arrays/top2_eta.npy', allow_pickle=True)
+    
     top1_phi = np.load('Arrays/top1_phi.npy', allow_pickle=True)
     top2_phi = np.load('Arrays/top2_phi.npy', allow_pickle=True)
     
@@ -140,15 +151,15 @@ except:
     #################    
 
     # Import and manipulation
-    path = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
+    path = "C:/Users/James/Desktop/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/dataset_semileptonic.csv"
     dataimport = pd.read_csv(path, header=None)
     main_data = pd.DataFrame(dataimport).to_numpy()
     
-    path1 = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/events_AZH_500_400_139ifb.csv"
+    path1 = "C:/Users/James/Desktop/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/events_AZH_500_400_139ifb.csv"
     extra_sig_import = pd.read_csv(path1, header=None)
     extra_sig_data = pd.DataFrame(extra_sig_import).to_numpy()
     
-    path2 = "C:/Users/James/Documents/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/events_ttZ_139ifb.csv"
+    path2 = "C:/Users/James/Desktop/Liverpool/Year 4/PHYS498 - Project/Python files/MPhys_Project/events_ttZ_139ifb.csv"
     extra_bkg_import = pd.read_csv(path2, header=None)
     extra_bkg_data = pd.DataFrame(extra_bkg_import).to_numpy()
     
@@ -863,6 +874,10 @@ except:
     np.save('Arrays/lep2_pt.npy', lep2_pt)     
     np.save('Arrays/lep3_pt.npy', lep3_pt)
     
+    np.save('Arrays/lep1_eta.npy', lep1_eta)     
+    np.save('Arrays/lep2_eta.npy', lep2_eta)     
+    np.save('Arrays/lep3_eta.npy', lep3_eta)
+    
     np.save('Arrays/lep1_phi.npy', lep1_phi)     
     np.save('Arrays/lep2_phi.npy', lep2_phi)     
     np.save('Arrays/lep3_phi.npy', lep3_phi) 
@@ -894,6 +909,9 @@ except:
     np.save('Arrays/bjet1_pt.npy', bjet1_pt)     
     np.save('Arrays/bjet2_pt.npy', bjet2_pt)
     
+    np.save('Arrays/bjet1_eta.npy', bjet1_eta)     
+    np.save('Arrays/bjet2_eta.npy', bjet2_eta)
+    
     np.save('Arrays/bjet1_phi.npy', bjet1_phi)     
     np.save('Arrays/bjet2_phi.npy', bjet2_phi)
     
@@ -904,6 +922,10 @@ except:
     
     np.save('Arrays/top1_pt.npy', top1_pt)     
     np.save('Arrays/top2_pt.npy', top2_pt)
+    
+    np.save('Arrays/top1_eta.npy', top1_eta)     
+    np.save('Arrays/top2_eta.npy', top2_eta)
+    
     np.save('Arrays/top1_phi.npy', top1_phi)     
     np.save('Arrays/top2_phi.npy', top2_phi)  
     
@@ -962,8 +984,8 @@ if doPlots:
     all_signals = ['ttZ', 'other','460_360', '500_360', '600_360', '600_400', '600_500', '500_400','500_400_1']
     
     # Selected signals, choose one
-    select_signals = ['ttZ', 'other', '460_360', '500_360', '600_360']
-    # select_signals = ['ttZ', 'other', '600_400', '600_500', '500_400_1']
+    #select_signals = ['ttZ', 'other', '460_360', '500_360', '600_360']
+    select_signals = ['ttZ', 'other', '600_400', '500_400_1', '600_500']
     
     all_line = ['-',':','--','--','-',':','-']
     select_line = ['--',':','--','--','-','--',':']
@@ -1032,30 +1054,30 @@ if doPlots:
                  saveas="Shallow/delta_m", signals = select_signals, 
                  shaped=True, line = select_line, xlim=[0, 1000])
     
-    # met pt
-    f.SignalHist(met_pt, weight, 25, N_arr, close=True, xtitle=r'$E^{T}_{miss}$ (GeV)', ytitle="Events", title=r'$E^{T}_{miss}$',
-                 saveas="Shallow/met_pt", signals = select_signals, 
-                 shaped = True, line = select_line, xlim=[0, 600])
+    # # met pt
+    # f.SignalHist(met_pt, weight, 25, N_arr, close=True, xtitle=r'$E^{T}_{miss}$ (GeV)', ytitle="Events", title=r'$E^{T}_{miss}$',
+    #              saveas="Shallow/met_pt", signals = select_signals, 
+    #              shaped = True, line = select_line, xlim=[0, 600])
     
-    # met phi
-    f.SignalHist(met_phi, weight, 25, N_arr, close=True, xtitle=r'$E^{T}_{miss}$ $\phi$ (rad)', ytitle="rad", title=r'$E^{T}_{miss}$ $\phi$',
-                 saveas="Shallow/met_phi", signals = select_signals, 
-                 shaped = True, line = select_line)
+    # # met phi
+    # f.SignalHist(met_phi, weight, 25, N_arr, close=True, xtitle=r'$E^{T}_{miss}$ $\phi$ (rad)', ytitle="rad", title=r'$E^{T}_{miss}$ $\phi$',
+    #              saveas="Shallow/met_phi", signals = select_signals, 
+    #              shaped = True, line = select_line)
+    
+    # # Wp mass
+    # f.SignalHist(Wp_mass, weight, 26, N_arr, close=True, xtitle=r'$W^+$ mass (GeV)', ytitle="Events", title=r'$W^+$ mass',
+    #              saveas="Shallow/Wp_mass", signals = select_signals, 
+    #              shaped = True, line = select_line, xlim=[0, 1000])
+    
+    # # Wm mass
+    # f.SignalHist(Wm_mass, weight, 25, N_arr, close=True, xtitle=r'$W^-$ mass (GeV)', ytitle="Events", title=r'$W^-$ mass',
+    #              saveas="Shallow/Wm_mass", signals = select_signals, 
+    #              shaped = True, line = select_line, xlim=[0, 600])
     
     # lep dr
     f.SignalHist(lep_dr, weight, 26, N_arr, close=True, xtitle=r'lep angle r (rad)', ytitle="rad", title=r'lepton ${\Delta}R$',
                   saveas="Shallow/lep_dr", signals = select_signals, 
                   shaped = True, line = select_line)
-    
-    # Wp mass
-    f.SignalHist(Wp_mass, weight, 26, N_arr, close=True, xtitle=r'$W^+$ mass (GeV)', ytitle="Events", title=r'$W^+$ mass',
-                 saveas="Shallow/Wp_mass", signals = select_signals, 
-                 shaped = True, line = select_line, xlim=[0, 1000])
-    
-    # Wm mass
-    f.SignalHist(Wm_mass, weight, 25, N_arr, close=True, xtitle=r'$W^-$ mass (GeV)', ytitle="Events", title=r'$W^-$ mass',
-                 saveas="Shallow/Wm_mass", signals = select_signals, 
-                 shaped = True, line = select_line, xlim=[0, 600])
     
     # Neutrino pz
     f.SignalHist(neu_four_mom[:,3], weight, 26, N_arr, close=True, xtitle=r'Neutrino $p_Z$ (GeV)', ytitle="Events", title=r'Neutrino $p_Z$',
@@ -1394,9 +1416,15 @@ if doSVM:
     
     y_train_1 = y_train_1.astype(int)
     
+    # Initial time for contrast with the SVM
+    SVM_460_time = time.time()
+    
     # Build the SVM
     model_1_prob_train, model_1_prob_test = s.SVM(X_train_1, y_train_1, X_test_1, 
                                                   C=100, gamma=0.01, tol=1, tag='1', ForceModel=forceModel1)
+    
+    # Runtime for contrast with the SVM
+    SVM_460_time = time.time() - SVM_460_time
     
     ### PLOTS 1 ###
     
@@ -1567,7 +1595,7 @@ if doSVM:
     #############
     # 500_400_1 #
     #############
-    
+
     ### Model 6 ###
     model_6 = (delta_m, Z_pt, H_pt, M_ttZ, top_dr)
     
@@ -1622,7 +1650,7 @@ ForceML4 = False
 ForceML5 = False
 
 # 500_400_1
-ForceML6 = True
+ForceML6 = False
 
 ### OPT
 ML_Opt_1 = False
@@ -1655,6 +1683,9 @@ if doML:
     mid_node = 8#int(input_node*2)
     extra_node = 12
     
+    # Initial time for contrast with the SVM
+    ML_460_time = time.time()
+    
     ### The model ###
     ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, ML_w_train_1, ML_w_test_1 = m.ML(
         ML_X_train_1, ML_y_train_1, ML_X_test_1, ML_y_test_1, model_length,
@@ -1671,6 +1702,9 @@ if doML:
                  
                  # Nodes
                  input_node = input_node, mid_node = mid_node, extra_node = extra_node)
+
+    # Runtime for contrast with the SVM
+    ML_460_time = time.time() - ML_460_time
 
     f.ROC_Curve(ML_pred_1_train, ML_pred_1_test, ML_y_train_1, ML_y_test_1, close=True, 
                 title=('ML_460_360_'), saveas=('ML/460_360/'))
@@ -1951,7 +1985,7 @@ if doML:
         
     # Define the learning rate
     ML_lr_6 = 0
-    ML_epoch_6 = 200
+    ML_epoch_6 = 300
     ML_batch_6 = 5
     
     input_node = 8#int(len(ML_X_train_6[0]))
@@ -2625,6 +2659,10 @@ if doLimits:
         print('ML: ',limit_ML_6)
         print('DL: ',limit_DL_6)
         
+    #######
+    # 360 #
+    #######
+    
     # Sensitivity arrays
     delta_m_sens_360 = np.array([limit_460_360_delta_m, limit_500_360_delta_m, limit_600_360_delta_m])
     Z_pt_sens_360 = np.array([limit_460_360_Z_pt, limit_500_360_Z_pt, limit_600_360_Z_pt])
@@ -2637,11 +2675,32 @@ if doLimits:
     mH_360 = (460, 500, 600)
     label_360 = [r'$\Delta$m',r'$Z_{p_T}$','SVM', 'ML','DL']
     
-    f.Line(sens_360, mH_360, label_360, close=True, xtitle=r'$m_H$ (GeV)', ytitle="Sensitivity", title='ML_Sensitivity_H=360',
-                  saveas="ML_Sensitivity_H=360")
+    f.Line(sens_360, mH_360, label_360, close=True, xtitle=r'$m_H$ (GeV)', ytitle="Upper limit", title='Upper_Limit_$m_H$=360',
+                  saveas="Upper_Limit_mH=360")
+    
+    #######
+    # 400 #
+    #######
+    
+    # Sensitivity arrays
+    delta_m_sens_400 = np.array([limit_500_400_1_delta_m, limit_600_400_delta_m])
+    Z_pt_sens_400 = np.array([limit_500_400_1_Z_pt, limit_600_400_Z_pt])
+    SVM_sens_400 = np.array([limit_SVM_6,limit_SVM_4])
+    ML_sens_400 = np.array([limit_ML_6,limit_ML_4])
+    DL_sens_400 = np.array([limit_DL_6,limit_DL_4])
+    
+    sens_400 = (delta_m_sens_400,Z_pt_sens_400,SVM_sens_400,ML_sens_400,DL_sens_400)
+    
+    mH_400 = (500, 600)
+    label_400 = [r'$\Delta$m',r'$Z_{p_T}$','SVM', 'ML','DL']
+    
+    f.Line(sens_400, mH_400, label_400, close=True, xtitle=r'$m_H$ (GeV)', ytitle="Upper limit", title='Upper_Limit_$m_H$=400',
+                  saveas="Upper_Limit_mH=400")
 
 ###############
 ### Runtime ###
 ###############
 
+print('\nSVM 460 Runtime: {:.2f} seconds'.format(SVM_460_time))
+print('\nML 460 Runtime: {:.2f} seconds'.format(ML_460_time))
 print('\nRuntime: {:.2f} seconds'.format(time.time() - start_time))
