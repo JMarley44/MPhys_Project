@@ -6,3 +6,8 @@
 *.pyc
 .spyproject/config/workspace.ini
 *.ini
+*.index
+*.pb
+*.joblib
+*.data-00000-of-00001
+*.joblib

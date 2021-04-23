@@ -17,7 +17,7 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
        epochs, batch, lr, 
        doES, ESpat,
        doRL, RLrate, RLpat,
-       input_node, mid_node, extra_node=0, optimisation=False):
+       input_node, mid_node=0, extra_node=0, extra_extra_node=0, optimisation=False):
     
     # Try to load the ML model
     try:
@@ -36,36 +36,55 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
             print()
             raise Exception
             
-        # Load the model
-        model = keras.models.load_model(type_tag[0] + "_models/" + type_tag[1] + "/model")
-        print(type_tag[0] + ' ' + type_tag[1] + ' model loaded')
-        
-        # Load the previous X data for this model and make predictions
-        X_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_test.npy', allow_pickle=True)
-        X_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_train.npy', allow_pickle=True)
-        
-        # Load the previous y and w data for this model to return to plots
-        y_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_test.npy', allow_pickle=True)
-        y_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_train.npy', allow_pickle=True)
-        
-        w_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_test.npy', allow_pickle=True)
-        w_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_train.npy', allow_pickle=True)
-        
+        # If it's a statistics run the model is saved elsewhere
+        if type_tag[0] != 'Statistics':
+            # Load the model
+            model = keras.models.load_model(type_tag[0] + "_models/" + type_tag[1] + "/model")
+            print(type_tag[0] + ' ' + type_tag[1] + ' model loaded')
+            
+            # Load the previous X data for this model and make predictions
+            X_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_test.npy', allow_pickle=True)
+            X_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/X_train.npy', allow_pickle=True)
+            
+            # Load the previous y and w data for this model to return to plots
+            y_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_test.npy', allow_pickle=True)
+            y_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/y_train.npy', allow_pickle=True)
+            
+            w_test = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_test.npy', allow_pickle=True)
+            w_train = np.load(type_tag[0] + "_models/" + type_tag[1] + '/w_train.npy', allow_pickle=True)
+            
+        else:
+            # Load the model
+            model = keras.models.load_model(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + "/model")
+            print(type_tag[2] + ' ' + type_tag[1] + ' model loaded')
+            
+            # Load the previous X data for this model and make predictions
+            X_test = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/X_test.npy', allow_pickle=True)
+            X_train = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/X_train.npy', allow_pickle=True)
+            
+            # Load the previous y and w data for this model to return to plots
+            y_test = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/y_test.npy', allow_pickle=True)
+            y_train = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/y_train.npy', allow_pickle=True)
+            
+            w_test = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/w_test.npy', allow_pickle=True)
+            w_train = np.load(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/w_train.npy', allow_pickle=True)
         
     except:
 
         if not forceFit:        
             print()
-            print('++++++++++++++++++++++++++')
-            print('No model for '+ type_tag[0] + ' Fit: ' + type_tag[1])
-            print('Retraining the model')
-            print('++++++++++++++++++++++++++')
+            print('++++++++++++++++++++++++++++++++++++')
+            print('No model found for '+ type_tag[0] + ' Fit: ' + type_tag[1])
+            print('Training the model')
+            print('++++++++++++++++++++++++++++++++++++')
             print()
             
         # THE MODEL #
         model = Sequential()
         model.add(Dense(input_node, input_dim=model_length, activation='relu'))
         model.add(Dense(mid_node, activation='relu'))
+        
+        # Add extra layer if there are values for the nodes
         if extra_node != 0:
             model.add(Dense(extra_node, activation='sigmoid'))
         
@@ -77,7 +96,7 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
         if lr != 0:
             opt = keras.optimizers.Adam(learning_rate=lr)
         else:
-            print('Learning rate not specified \n')
+            print('Learning rate not specified - Default = 0.01\n')
             opt = 'adam'
         
         # Stochastic grad descent optimiser, optional momentum and decay
@@ -129,7 +148,7 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
                                         sample_weight=w_norm_train, validation_split=0.2, 
                                         callbacks=[rlrop])
         else:
-            # Fit the model without early stopping and reducable learning rate
+            # Fit the model without any callbacks
             history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch,
                                         sample_weight=w_norm_train, validation_split=0.2)
         
@@ -137,16 +156,29 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
 
         if not optimisation:
             
-            # Save the model for loading next time
-            model.save(type_tag[0] + "_models/" + type_tag[1] + "/model")
-            
-            # Save the X and y data for loading (without randomising again) 
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/X_test', X_test)
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/X_train', X_train)
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_test', y_test)
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_train', y_train)
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_train', w_train)
-            np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_test', w_test)
+            # If it's a statistics run save the model elsewhere for organisation
+            if type_tag[0] != 'Statistics':
+                # Save the model for loading next time
+                model.save(type_tag[0] + "_models/" + type_tag[1] + "/model")
+                
+                # Save the X and y data for loading (without randomising again) 
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/X_test', X_test)
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/X_train', X_train)
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_test', y_test)
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/y_train', y_train)
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_train', w_train)
+                np.save(type_tag[0] + "_models/" + type_tag[1] + '/w_test', w_test)
+            else:
+                # Save the model for loading next time
+                model.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + "/model")
+                
+                # Save the X and y data for loading (without randomising again) 
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/X_test', X_test)
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/X_train', X_train)
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/y_test', y_test)
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/y_train', y_train)
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/w_train', w_train)
+                np.save(type_tag[0] + "_" + type_tag[2] + "_models/" + type_tag[1] + '/w_test', w_test)
             
             # Make a plot of accuracy etc.
             
@@ -159,7 +191,13 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
             plt.legend(['Train', 'Val'], loc='best')
             plt.xticks(fontsize=20)
             plt.yticks(fontsize=20)
-            plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[1] + "/" + "model_accuracy.png")
+            
+            # If it's a statistics plot save it to a separate area for better organisation
+            if type_tag[0] != 'Statistics':
+                plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[1] + "/" + "model_accuracy.png")
+            else:
+                plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[2] + "/" + "model_accuracy" 
+                            + type_tag[1] +".png")
             
             if close: 
                 plt.close()
@@ -175,12 +213,18 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
             plt.legend(['Train', 'Val'], loc='best')
             plt.xticks(fontsize=20)
             plt.yticks(fontsize=20)
-            plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[1] + "/" + "model_loss.png")
             
-        if close: 
-            plt.close()
-        else:
-            plt.show()
+            # If it's a statistics plot save it to a separate area for better organisation
+            if type_tag[0] != 'Statistics':
+                plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[1] + "/" + "model_loss.png")
+            else:
+                plt.savefig("Plots/" + type_tag[0] + "/" + type_tag[2] + "/" + "model_loss" 
+                            + type_tag[1] +".png")
+            
+            if close: 
+                plt.close()
+            else:
+                plt.show()
             
     # Make predictions for test and train
     pred_train = model.predict(X_train)

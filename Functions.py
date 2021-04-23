@@ -560,11 +560,8 @@ Function to prepare x and y data for machine learning
 '''
 
 def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, train_percent=0.5, cut_percent=0):
-    
-    # Length of the signal
-    sig_length = (signal_end - signal_start)
-    
-    # Test if the input discriminant is singular or packed into a tuple
+     
+    # Test if the input discriminant is packed into a tuple
     # Assign it to the 'all_variables' variable
     if isinstance(variables, tuple):
         var_length = len(variables)
@@ -583,22 +580,37 @@ def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, train_perce
     bkg_w = weight[0:N_ttZ]
     sig_w = weight[signal_start:signal_end]
     
+    if cut_percent != 0:
+        # Random number generator
+        rng = np.random.default_rng()
+        
+        #Amount of data to be cut
+        cut_amount = int(len(signal)*cut_percent)
+        
+        # Generate random integers up to the cut_amount with no two same numbers
+        rints = rng.choice(len(signal), size=cut_amount, replace=False)
+
+        # Sort the random integers from high-low so there will be no conflicts on removal
+        rints[::-1].sort()
+        
+        for i in range(cut_amount):
+            # Use the random integers to delete signal and corresponding weights
+            signal = np.delete(signal,rints[i],axis=0)
+            sig_w = np.delete(sig_w,rints[i],axis=0)
+    
     # Normalise the weights
-    # Just use float64 and round later to manage float point err
+    # Just use float64 and round after to manage the floating point error
     mean_bkg_w = np.mean(bkg_w, dtype=np.float64)
     mean_sig_w = np.mean(sig_w, dtype=np.float64)
     
     bkg_w_norm = (bkg_w/mean_bkg_w).astype('float32')
     sig_w_norm = (sig_w/mean_sig_w).astype('float32')
     
-    # Perform the cut if it has value
-    signal = signal[0:sig_length]
-    
     # Assign the background value 0 and the signal value 1
     zeros = np.zeros((N_ttZ,1))
-    ones = np.ones((sig_length,1))
+    ones = np.ones((len(signal),1))
     
-    # Combine backgrounds and signals
+    # Combine backgrounds and signals and weights
     xdata = np.concatenate((background,signal))
     ydata = np.concatenate((zeros,ones))
     wdata = np.concatenate((bkg_w,sig_w))
@@ -608,29 +620,12 @@ def data_prep(variables, N_ttZ, N, weight, signal_start, signal_end, train_perce
     wdata = wdata.reshape((len(wdata),1)) 
     w_norm_data = w_norm_data.reshape((len(w_norm_data),1)) 
     
-    # Add y and weights to the data for shuffling together
+    # Add y, weights and norm_weights to the data for shuffling together
     data = np.append(xdata,ydata, axis=1)
     data = np.append(data,wdata, axis=1)
     data = np.append(data,w_norm_data, axis=1)
 
-    # If cut percentage is non-zero randomly remove a percentage of events
-    if cut_percent != 0:
-        # Random number generator
-        rng = np.random.default_rng()
-        
-        #Amount of data to be cut
-        cut_amount = int(len(data)*cut_percent)
-        
-        # Generate random integers
-        rints = rng.choice(len(data), size=cut_amount, replace=False)
-
-        # Sort from high-low so no conflicts on removal
-        rints[::-1].sort()
-        
-        for i in range(cut_amount):
-            data = np.delete(data,rints[i],axis=0)
-
-    # Shuffle the data
+    # Randomly shuffle the data
     np.random.shuffle(data)
 
     # Define training and test splitting
@@ -1352,8 +1347,12 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     # PLOT BACKGROUND #
     ###################
 
-    # Scale the weight to 139 ifb (*0.5 since there is 139*2 ifb of data)
+    # Scale the weight to 300 ifb (*0.5 since there is 139*2 ifb of data)
     w_bkg = w_bkg*0.5*(300/139)
+    
+    #!!! Remove these debugs
+    # if title == "ML_500_400_1_":
+    #     print('bkg weight: ', w_bkg)
     
     # Reshape
     w_bkg = w_bkg.reshape((len(w_bkg),1)) 
@@ -1369,8 +1368,11 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     # PLOT SIGNAL #
     ###############
     
-    # Scale the signal to 139 igb
+    # Scale the signal to 300 ifb
     w_sig = w_sig*(300/139)
+    
+    # if title == "ML_500_400_1_":
+    #     print('sig weight: ', w_sig)
     
     # Reshape the weights
     w_sig = w_sig.reshape((len(w_sig),1)) 
@@ -1389,7 +1391,7 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     ######################
     
     # Titles and legend
-    plt.title(title+'test', fontsize=40)
+    plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
     plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
@@ -1414,7 +1416,6 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     if addTextbool:
         ax.text(.55, .97, addText, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
         verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
-
 
     plt.savefig("Plots/"+saveas+'Limit'+".png")
 
@@ -1463,25 +1464,29 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
         ns += hsig[i]
         nb += hbkg[i]
         if nb >= 2:
-            #sign = ns/sqrt(nb)
             sign = calcSign(ns, nb, method, err)
             res += sign*sign
-            #print('bin ',i, ns, nb, sign, res)
             ns, nb = 0., 0.
         else:
             continue
             
     s = norm.ppf(1-(1-confidenceLevel)*0.5)
     lim = s/np.sqrt(res)
-    #if isinf(lim) and doIt:
-    #    return getLimit(savgol_filter(hbkg,5,2), savgol_filter(hsig,5,2),
-    #                    confidenceLevel, False)
+
         
-    
     return lim
     
-def Line(sens, mH, label, close, **kwargs):
+def Line(x, y, label=None, close=True, doString=True, **kwargs):
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
+
+    doError = False
+
+    y_range = (np.amax(y)-np.amin(y))*0.1
+    y_min = np.amin(y)-y_range
+    y_max = np.amax(y)+y_range
+
+    x_min = np.amin(x)-(0.02*np.amin(x))
+    x_max = np.amax(x)+(0.02*np.amax(x))
 
     # Extract additonal arguments from kwargs
     for i, j in kwargs.items():
@@ -1493,27 +1498,54 @@ def Line(sens, mH, label, close, **kwargs):
             title = j
         elif i=="saveas":
             saveas = j
+        elif i=="error":
+            error = j
+            doError=True
+        elif i=="x_lim":
+            x_min = j[0]
+            x_max = j[1]
+        elif i=="y_lim":
+            y_min = j[0]
+            y_max = j[1]
 
     markers = ['rx','bx','gx','yx','mx']
     linestyle= ['-',':','--','-.','-']
 
-    for i in range(len(sens)):
+    if isinstance(y, tuple):
+        for i in range(len(y)):
+            # Make the plot
+            plt.plot(x,y[i],markers[i],label=label[i],linestyle=linestyle[i])
+            # Add errors if enabled
+            if doError:
+                plt.errorbar(x, y[i], ls='none', yerr=error[i], marker='+',color='red')
+    else:
         # Make the plot
-        plt.plot(mH,sens[i],markers[i],label=label[i],linestyle=linestyle[i])
+        plt.plot(x,y,markers[0],label=label,linestyle=linestyle[0])
+        # Add errors if enabled
+        if doError:
+            plt.errorbar(x, y, ls='none', yerr=error, marker='+',color='red')
     
-    # Set x limits
-    mH_min = np.amin(mH)-25
-    mH_max = np.amax(mH)+25
-    plt.xlim(mH_min, mH_max)
+    # if doError:
+    #     y_min -= error
+    #     y_max += error
     
-    # Set y limits
-    sens_max = np.amax(sens)
+    # Set limits
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
 
     # Titles and legend
     plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
     plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
+    
+    if doString:
+        # Define a string
+        string = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$ \n95% CL limits'.format(lumin=int(300)))
+        
+        # Add a text box with the string
+        ax.text(.03, .03, string, transform=ax.transAxes, fontsize=10, horizontalalignment='left',
+                verticalalignment='bottom', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
 
     # Save the figure to the relevant folder 
     plt.savefig("Plots/Singular/"+saveas+".png")
