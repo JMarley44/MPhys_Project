@@ -233,7 +233,6 @@ def ML(X_train, y_train, X_test, y_test, model_length, w_train, w_test, w_norm_t
     # Return the predictions and the y values (in case they are loaded)
     return pred_train, pred_test, y_train, y_test, w_train, w_test
 
-
 def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, model_length,
        epochs, batch, lr, 
        doES, ESpat,
@@ -295,18 +294,15 @@ def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, mode
                     for m in range(mid_node_len):
                         for p in range(extra_node_len):
         
-                            print('**************')
+                            print('\n**************')
                             print('Opt. run: ' + str(counter+1) + ' / ' + str(all_length))
-                            print('**************')                
-            
-                            if p != 0:
-                                add_term = ' ' + ' - node3 = ' + str(extra_node[p]) 
-                            else:
-                                add_term = ''
+                            print('**************\n')                
 
-            
+                            add_term = ' ' + ' - node3 = ' + str(extra_node[p]) 
+
                             ### The model ###   
-                            pred_train, pred_test, y_train, y_test, w_train, w_test = ML(X_train, y_train, X_test, y_test, model_length,
+                            pred_train, pred_test, y_train_out, y_test_out, w_train_out, w_test_out = ML(
+                                X_train, y_train, X_test, y_test, model_length,
                                                                         w_train, w_test, w_norm_train,
                                          forceFit=True, close=False, optimisation=True,
                                          
@@ -318,8 +314,7 @@ def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, mode
                                          
                                          # Learning rate reduction
                                          doRL=False, RLrate=RLrate, RLpat=RLpat,
-                                        
-                                         
+                                    
                                          # Nodes
                                          input_node = input_node[l], mid_node = mid_node[m], extra_node = extra_node[p],
                                          
@@ -327,7 +322,7 @@ def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, mode
                                          )
                         
                             #AUC = 
-                            f.ROC_Curve(pred_train, pred_test, y_train, y_test, close=True, 
+                            f.ROC_Curve(pred_train, pred_test, y_train_out, y_test_out, close=True, 
                                         title=(type_tag[0] + '_' + type_tag[1]), 
                                         
                                         saveas=(type_tag[0] + '/' + type_tag[1] + '/Optimisation/' + 'ROC ' +
@@ -341,7 +336,7 @@ def ML_opt(X_train, y_train, X_test, y_test, w_train, w_test, w_norm_train, mode
                                                 
                                                 ))     
 
-                            f.ProbHist(pred_train, pred_test, y_train, y_test, w_train, w_test, 21, close=True, 
+                            f.ProbHist(pred_train, pred_test, y_train_out, y_test_out, w_train_out, w_test_out, 21, close=True, 
                                      label=['ttZ','ggA_600_500'], xtitle="Probability", ytitle="Events", 
                                         title=(type_tag[0] + '_' + type_tag[1]), 
                                         

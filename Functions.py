@@ -161,7 +161,10 @@ def Hist(X, weight, Nb, close, N_ttZ, **kwargs):
     
     ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
     
-    string = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$'.format(lumin=int(139)))
+    string1 = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$'.format(lumin=int(139)))
+    string2 = '\n'+r'A $\rightarrow$ ZH $\rightarrow$ llt$\bar{{t}}$'
+    
+    string = string1+string2
     
     # Add a text box
     # fontweight='bold', 
@@ -449,26 +452,23 @@ def SignalHist(X, weight, Nb, N_arr, close, shaped=False, limit=False, **kwargs)
             plt.step(bins, step_count_ext, label=label[bkg_length+i], color=color[bkg_length+i], 
                      where='post', linewidth = 2.0, linestyle=linestyle[i])
             
-            # Save the signal count for specific signal for return
-            #!!! Needs to be changed to extract a given signal
+            # Save the signal count for return
             if not shaped:
                 sigcount[i,:] = step_count
-                
-                # Multiple sig counts need to returned in the future
-                #sigcount[i] = step_count
     
+    #!!! Legend fontsize
     
     # Plot customisation
     if ytitle_in == 'Events':
         # If a GeV plot use GeV bins and decimal format
         ytitle = ('Events' + " / {width:} GeV").format(width = int(width))
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.d'))
-        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
+        plt.legend(loc='upper right', fontsize=20, bbox_to_anchor=(1, .85), framealpha=1, edgecolor='k')
     else:
         # If a rad plot use rad bins and float format
         ytitle = ('Events' + " / {width:.3f} rad").format(width = width)
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
+        plt.legend(loc='upper right', fontsize=20, bbox_to_anchor=(1, .85), framealpha=1, edgecolor='k')
     
     if shaped:
         plt.title(title + ' - shape comparison', fontsize=40)
@@ -478,8 +478,8 @@ def SignalHist(X, weight, Nb, N_arr, close, shaped=False, limit=False, **kwargs)
         else:
             plt.title(title + ' - event comparison', fontsize=40)
     
-    plt.xlabel(xtitle, fontsize=25)
-    plt.ylabel(ytitle, fontsize=25)
+    plt.xlabel(xtitle, fontsize=20)
+    plt.ylabel(ytitle, fontsize=20)
     
     # Define ticks for numbering (major only) and grids (both)
     ax.set_xticks(major_ticks)
@@ -517,9 +517,11 @@ def SignalHist(X, weight, Nb, N_arr, close, shaped=False, limit=False, **kwargs)
     # Define a string with the used luminosity scaling
     string = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$'.format(lumin=int(ifb)))
     
+    #!!! Fontsize
+    
     # Add a text box
     # fontweight='bold', 
-    ax.text(.97, .97, string, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+    ax.text(.95, .95, string, transform=ax.transAxes, fontsize=20, horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
     # Add an additional text box if in kwargs
@@ -530,7 +532,7 @@ def SignalHist(X, weight, Nb, N_arr, close, shaped=False, limit=False, **kwargs)
         # fig.text(.5, .05, add_string, ha='center')
         # fig.set_size_inches(11, 10, forward=True)
         
-        plt.figtext(0.5, 0.01, add_string, wrap=True, horizontalalignment='center', fontsize=8)
+        plt.figtext(0.8, 0.01, add_string, wrap=True, horizontalalignment='center', fontsize=8)
     
     # Save the figure to the relevant folder 
     if shaped:
@@ -731,18 +733,7 @@ def ROC_Curve(pred_train, pred_test, y_train, y_test, close, title, saveas, **kw
     auc_all = metrics.auc(fpr_all, tpr_all)
     auc_train = metrics.auc(fpr_train, tpr_train)
     auc_test = metrics.auc(fpr_test, tpr_test)
-    
-    #!!! Testing errors
-    
-    # Error (defined as (FN+FP)/(P+N)), https://www.researchgate.net/figure/Sample-figure-title-Area-under-ROC-curve-AUC-Error-defined-as-FN-FP-P-N-and_fig4_26322950
-    
-    # N = len(y_all)
-    # err = np.sqrt((fpr_all*(1-fpr_all))/N)
-    # err_counter = 0
-    # for i in range(len(err)):
-    #     err_counter = np.sqrt(err_counter**2+err[i]**2)
-    # print(err_counter)
-        
+      
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
     plt.plot(fpr_all, tpr_all, label='All (area = {:.3f})'.format(auc_all), color='red')
     plt.plot(fpr_test, tpr_test, label='Test (area = {:.3f})'.format(auc_test), color='deepskyblue')
@@ -750,7 +741,8 @@ def ROC_Curve(pred_train, pred_test, y_train, y_test, close, title, saveas, **kw
     plt.xlabel('False positive rate', fontsize=25)
     plt.ylabel('True positive rate', fontsize=25)
     plt.title(title + ' ROC Curve', fontsize=40)
-    plt.legend(loc='best', fontsize=15)
+    
+    plt.legend(loc='lower right', fontsize=20)
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     
@@ -902,11 +894,13 @@ def ProbHist(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, close,
         # PLOT CUSTOMISATION #
         ######################
         
+        #!!! Legend
+        
         # Titles and legend
-        plt.title(title+add_term[i], fontsize=40)
+        plt.title(title+' - '+add_term[i], fontsize=40)
         plt.xlabel(xtitle, fontsize=25)
         plt.ylabel(ytitle, fontsize=25)
-        plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
+        plt.legend(loc='upper right', fontsize=20, framealpha=1, edgecolor='k')
         
         # Limit 0-1 for probability
         plt.xlim(0, 1)
@@ -920,13 +914,13 @@ def ProbHist(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, close,
         ax.grid(which='major', axis='y', alpha = 0.5)
         
         # Set tick fontsize and yscale
-        plt.xticks(fontsize=20)
-        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=25)
+        plt.yticks(fontsize=25)
         #plt.yscale('log')
         
         # if there's additional text put it in a text box
         if addTextbool:
-            ax.text(.55, .97, addText, transform=ax.transAxes, fontsize=10, horizontalalignment='right',
+            ax.text(.55, .97, addText, transform=ax.transAxes, fontsize=15, horizontalalignment='right',
             verticalalignment='top', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
     
         # Save the figure
@@ -1186,26 +1180,21 @@ def SigLimitCount(X, weight, Nb, N_arr, close, **kwargs):
             plt.step(bins, step_count_ext, label=label[bkg_length+i], color=color[bkg_length+i], 
                      where='post', linewidth = 2.0, linestyle=linestyle[i])
             
-            # Save the signal count for specific signal for return
-            #!!! Needs to be changed to extract a given signal
+            # Save the signal count for return
             if not shaped:
                 sigcount[i,:] = step_count
                 
-                # Multiple sig counts need to returned in the future
-                #sigcount[i] = step_count
-    
-    
     # Plot customisation
     if ytitle_in == 'Events':
         # If a GeV plot use GeV bins and decimal format
         ytitle = ('Events' + " / {width:} GeV").format(width = int(width))
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.d'))
-        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
+        plt.legend(loc='upper right', fontsize=20, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     else:
         # If a rad plot use rad bins and float format
         ytitle = ('Events' + " / {width:.3f} rad").format(width = width)
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-        plt.legend(loc='upper right', fontsize=10, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
+        plt.legend(loc='upper right', fontsize=20, bbox_to_anchor=(1, .92), framealpha=1, edgecolor='k')
     
     if shaped:
         plt.title(title + ' - shape comparison', fontsize=40)
@@ -1350,10 +1339,6 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     # Scale the weight to 300 ifb (*0.5 since there is 139*2 ifb of data)
     w_bkg = w_bkg*0.5*(300/139)
     
-    #!!! Remove these debugs
-    # if title == "ML_500_400_1_":
-    #     print('bkg weight: ', w_bkg)
-    
     # Reshape
     w_bkg = w_bkg.reshape((len(w_bkg),1)) 
     pred_bkg = pred_bkg.reshape((len(pred_bkg),1)) 
@@ -1370,10 +1355,7 @@ def ProbLimitCount(pred_train, pred_test, y_train, y_test, w_train, w_test, Nb, 
     
     # Scale the signal to 300 ifb
     w_sig = w_sig*(300/139)
-    
-    # if title == "ML_500_400_1_":
-    #     print('sig weight: ', w_sig)
-    
+
     # Reshape the weights
     w_sig = w_sig.reshape((len(w_sig),1)) 
     pred_sig = pred_sig.reshape((len(pred_sig),1)) 
@@ -1476,7 +1458,8 @@ def getLimit(hbkg, hsig, confidenceLevel=0.95, method=0, err=0.05):
         
     return lim
     
-def Line(x, y, label=None, close=True, doString=True, **kwargs):
+def Line(x, y, label=None, close=True, doString=True, RuntimePlot=False, leg_loc='upper right',**kwargs):
+    
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(11.0,9.0))
 
     doError = False
@@ -1529,6 +1512,14 @@ def Line(x, y, label=None, close=True, doString=True, **kwargs):
     #     y_min -= error
     #     y_max += error
     
+    # Set x ticks and y ticks, if its a runtime plot make the x axis the string
+    if RuntimePlot:
+        xticks_string = ['SVM', 'SL', 'DL']
+        plt.xticks(x, xticks_string, fontsize=20)
+    else:
+        plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    
     # Set limits
     plt.xlim(x_min, x_max)
     plt.ylim(y_min, y_max)
@@ -1537,14 +1528,16 @@ def Line(x, y, label=None, close=True, doString=True, **kwargs):
     plt.title(title, fontsize=40)
     plt.xlabel(xtitle, fontsize=25)
     plt.ylabel(ytitle, fontsize=25)
-    plt.legend(loc='upper right', fontsize=15, framealpha=1, edgecolor='k')
+    plt.legend(loc=leg_loc, fontsize=20, framealpha=1, edgecolor='k')
     
     if doString:
         # Define a string
         string = ('$\u221As = 13 TeV, {lumin:}$ $fb^{{-1}}$ \n95% CL limits'.format(lumin=int(300)))
         
+        #!!! Fontsize
+        
         # Add a text box with the string
-        ax.text(.03, .03, string, transform=ax.transAxes, fontsize=10, horizontalalignment='left',
+        ax.text(.06, .06, string, transform=ax.transAxes, fontsize=20, horizontalalignment='left',
                 verticalalignment='bottom', bbox=dict(facecolor='white', alpha=1, edgecolor='black', boxstyle='round,pad=1'))
 
     # Save the figure to the relevant folder 
